@@ -15,12 +15,20 @@ const AST = data('furipota:ast', {
     return { name };
   },
 
+  Keyword(name) {
+    return { name };
+  },
+
   Text(value) {
     return { value };
   },
 
-  Number(value) {
-    return { value };
+  Integer(sign, value) {
+    return { sign, value };
+  },
+
+  Decimal(sign, integral, decimal, exponent) {
+    return { sign, integral, decimal, exponent };
   },
 
   Vector(items) {
@@ -51,6 +59,11 @@ const AST = data('furipota:ast', {
 
   Variable(id) {
     return { id };
+  },
+
+  // --[ Entry point ]--------------------------------------------------
+  Program(declarations) {
+    return { declarations };
   }
 }).derive(
   derivations.equality,

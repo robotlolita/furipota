@@ -1,0 +1,120 @@
+//----------------------------------------------------------------------
+//
+// This source file is part of the furipota project.
+//
+// Licensed under MIT. See LICENCE for full licence information.
+// See CONTRIBUTORS for the list of contributors to the project.
+//
+//----------------------------------------------------------------------
+
+const ast = require('./ast');
+
+var reserved = [
+  'define',
+  'import'
+];
+
+function isValid(id) {
+  return reserved.indexOf(id) === -1;
+}
+
+
+ometa FuripotaParser {
+  // --[ Lexical structure ]
+  space   = /\s/,
+  ignored = space | comment,
+  comment = fromTo('#', '\n'):a -> a.slice(1),
+  ws      = ignored*,
+  sws     = ignored+,
+  kw :xs  = seq(xs) ~(letter | digit | '-' | '_' | ':'),
+  idStart = letter,
+  idRest  = (letter | digit | '-' | '_'),
+
+  octDigits = /[0-7_]+/:a       -> a.replace(/_/g, ''),
+  hexDigits = /[0-9a-fA-F_]+/:a -> a.replace(/_/g, ''),
+  binDigits = /[01_]+/:a        -> a.replace(/_/g, ''),
+  digits = /[0-9_]+/:a          -> a.replace(/_/g, ''),
+
+  exponent = ('e' | 'E') sign?:s digits:d -> s + d,
+  sign = '+' | '-',
+
+  stringEscape = '\\' ( 'b' -> '\b'
+                      | 'f' -> '\f'
+                      | 'n' -> '\n'
+                      | 'r' -> '\r'
+                      | 't' -> '\t'
+                      | char)
+
+  stringChar = (stringEscape || (~seq('"') char)):a -> a,
+  unescapableChars = ~seq('"""') char,
+
+
+  Identifier = <idStart idRest*>:a ?isValid(a)
+               -> ast.Identifier(a),
+
+  Keyword = <idStart idRest*>:a ':'
+            -> ast.Keyword(a),
+
+
+  // --[ Values ]
+  value = Number | Text | Vector | Record,
+
+  Number = sign?:s ( '0' 'b' binDigits:n
+                     -> ast.Integer(s || '+', parseInt(n, 2).toString())
+                   | '0' 'o' octDigits:n
+                     -> ast.Integer(s || '+', parseInt(n, 8).toString())
+                   | '0' 'x' hexDigits:n
+                     -> ast.Integer(s || '+', parseInt(n, 16).toString())
+                   | digits:a '.' digits:b exponent?:c
+                     -> ast.Decimal(s || '+', a, b, c || '')
+                   | digits:a
+                     -> ast.Integer(s || '+', a)
+                   ),
+
+
+  Text = seq('"""') <unescapableChars*>:as seq('"""')
+         -> ast.Text(as)
+       | '"' (stringChar)*:as '"'
+         -> ast.Text(as.join('')),
+
+  Vector = '[' ws ']'
+           -> ast.Vector([]),
+         | '[' ws expression:a (ws ',' expression)*:as ']'
+           -> ast.Vector([a].concat(as)),
+
+  Record = '{' ws '}'
+           -> ast.Record([])
+         | Keyword:k expression:v (sws Keyword:k1 expression:v1 -> [k1, v1])*:xs
+           -> ast.Record([[k, v]].concat(xs))
+
+
+  // --[ Declarations ]
+  declaration = Define | Import,
+
+  Define = kw('define') ws Identifier:i ws '=' ws expression:e
+           -> ast.Define(i, e),
+
+  Import = kw('import') ws Text:p
+           -> ast.Import(p),
+
+
+  // --[ Expressions ]
+  expression = Pipe,
+
+  Pipe = Pipe:a ws '>' ws Identifier:i Record?:r
+         -> ast.Pipe(a, i, r)
+       | Invoke,
+
+  Invoke = Identifier:i ws expression:v ws Record?:r
+           -> ast.Invoke(i, v, r)
+         | primaryExpression,
+
+  primaryExpression = value
+                    | Identifier:i               -> ast.Variable(i)
+                    | '(' ws expression:a ws ')' -> a,
+
+
+  // --[ Entry points ]
+  program = ws '%furipota/1' ws declarations:xs ws eof
+            -> ast.Program(xs)
+}
