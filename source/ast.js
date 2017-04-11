@@ -49,12 +49,16 @@ const AST = data('furipota:ast', {
   },
 
   // --[ Expressions ]--------------------------------------------------
-  Invoke(callee, stream, record) {
-    return { callee, stream, record };
+  Invoke(callee, input, options) {
+    return { callee, input, options };
   },
 
-  Pipe(input, mapping, record) {
-    return { input, mapping, record };
+  Partial(callee, options) {
+    return { callee, options };
+  },
+
+  Pipe(input, transformation) {
+    return { input, transformation };
   },
 
   Variable(id) {

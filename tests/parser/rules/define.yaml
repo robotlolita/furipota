@@ -1,0 +1,11 @@
+define hello = "hello" > world
+---
+result: OK
+rule: Define
+ast:
+  !Define
+  id: !Identifier "hello"
+  expression:
+    !Pipe
+    input: !Text "hello"
+    transformation: !Variable { id: !Identifier world }

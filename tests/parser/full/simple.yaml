@@ -1,0 +1,28 @@
+%furipota/1
+import "core"
+
+define source = watch "src/*.js"
+define compile = source > babel _ output-directory: "lib"
+---
+result: OK
+ast:
+  !Program
+  - !Import { path: !Text "core" }
+  - !Define
+    id: !Identifier source
+    expression:
+      !Invoke
+      callee: !Identifier watch
+      input: !Text "src/*.js"
+      options: !Record []
+  - !Define
+    id: !Identifier compile
+    expression:
+      !Pipe
+      input: !Variable { id: !Identifier source }
+      transformation:
+        !Partial
+        callee: !Identifier babel
+        options:
+          !Record
+          - [!Keyword output-directory, !Text lib]

@@ -29,11 +29,12 @@ ometa FuripotaParser {
   kw :xs  = seq(xs) ~(letter | digit | '-' | '_' | ':'),
   idStart = letter,
   idRest  = (letter | digit | '-' | '_'),
+  eof     = ~char,
 
-  octDigits = /[0-7_]+/:a       -> a.replace(/_/g, ''),
-  hexDigits = /[0-9a-fA-F_]+/:a -> a.replace(/_/g, ''),
-  binDigits = /[01_]+/:a        -> a.replace(/_/g, ''),
-  digits = /[0-9_]+/:a          -> a.replace(/_/g, ''),
+  octDigits = /[0-7][0-7_]*/:a             -> a.replace(/_/g, ''),
+  hexDigits = /[0-9a-fA-F][0-9a-fA-F_]*/:a -> a.replace(/_/g, ''),
+  binDigits = /[01][01_]*/:a               -> a.replace(/_/g, ''),
+  digits = /[0-9][0-9_]*/:a                -> a.replace(/_/g, ''),
 
   exponent = ('e' | 'E') sign?:s digits:d -> s + d,
   sign = '+' | '-',
@@ -43,9 +44,10 @@ ometa FuripotaParser {
                       | 'n' -> '\n'
                       | 'r' -> '\r'
                       | 't' -> '\t'
-                      | char)
+                      | char),
 
-  stringChar = (stringEscape || (~seq('"') char)):a -> a,
+  stringChar = stringEscape
+             | (~seq('"') char):a -> a,
   unescapableChars = ~seq('"""') char,
 
 
@@ -74,7 +76,7 @@ ometa FuripotaParser {
 
   Text = seq('"""') <unescapableChars*>:as seq('"""')
          -> ast.Text(as)
-       | '"' (stringChar)*:as '"'
+       | '"' stringChar*:as '"'
          -> ast.Text(as.join('')),
 
   Vector = '[' ws ']'
@@ -84,8 +86,8 @@ ometa FuripotaParser {
 
   Record = '{' ws '}'
            -> ast.Record([])
-         | Keyword:k expression:v (sws Keyword:k1 expression:v1 -> [k1, v1])*:xs
-           -> ast.Record([[k, v]].concat(xs))
+         | Keyword:k ws expression:v (sws Keyword:k1 ws expression:v1 -> [k1, v1])*:xs
+           -> ast.Record([[k, v]].concat(xs)),
 
 
   // --[ Declarations ]
@@ -101,12 +103,14 @@ ometa FuripotaParser {
   // --[ Expressions ]
   expression = Pipe,
 
-  Pipe = Pipe:a ws '>' ws Identifier:i Record?:r
-         -> ast.Pipe(a, i, r)
+  Pipe = Pipe:a ws '>' ws expression:t
+         -> ast.Pipe(a, t)
        | Invoke,
 
   Invoke = Identifier:i ws expression:v ws Record?:r
-           -> ast.Invoke(i, v, r)
+           -> ast.Invoke(i, v, r || ast.Record([]))
+         | Identifier:i ws '_' ws Record?:r
+           -> ast.Partial(i, r)
          | primaryExpression,
 
   primaryExpression = value
@@ -115,6 +119,6 @@ ometa FuripotaParser {
 
 
   // --[ Entry points ]
-  program = ws '%furipota/1' ws declarations:xs ws eof
+  Program = ws seq('%furipota/1') (ws declaration)*:xs ws eof
             -> ast.Program(xs)
 }

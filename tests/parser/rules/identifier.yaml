@@ -1,0 +1,35 @@
+valid
+---
+result: OK
+rule: Identifier
+ast: !Identifier valid
+
+***
+
+also-valid-here123
+---
+result: OK
+rule: Identifier
+ast: !Identifier also-valid-here123
+
+***
+
+Caps-OK
+---
+result: OK
+rule: Identifier
+ast: !Identifier Caps-OK
+
+***
+
+-invalid
+---
+result: FAIL
+rule: Identifier
+
+***
+
+1invalid
+---
+result: FAIL
+rule: Identifier

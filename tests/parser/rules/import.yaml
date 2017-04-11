@@ -1,0 +1,7 @@
+import "path"
+---
+result: OK
+rule: Import
+ast:
+  !Import
+  path: !Text "path"
