@@ -17,7 +17,9 @@
   },
   "homepage": "https://github.com/origamitower/furipota#readme",
   "dependencies": {
+    "commander": "^2.9.0",
     "folktale": "^2.0.0-alpha4",
+    "glob": "^7.1.1",
     "ometajs": "^4.0.0"
   },
   "devDependencies": {

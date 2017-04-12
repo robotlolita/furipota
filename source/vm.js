@@ -7,9 +7,27 @@
 //
 //----------------------------------------------------------------------
 
-const { fromPairs } = require('folktale/core/object');
+const path = require('path');
+const fs = require('fs');
+const { fromPairs, mapValues } = require('folktale/core/object');
 
 const AST = require('./ast');
+const Parser = require('./parser').FuripotaParser;
+const Stream = require('./stream');
+
+
+function readAsText(path) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path, 'utf8', (error, data) => {
+      if (error)  reject(error);
+      else        resolve(data);
+    });
+  });
+}
+
+function parse(source) {
+  return Parser.matchAll(source, 'Program');
+}
 
 
 class Primitive {
@@ -19,6 +37,18 @@ class Primitive {
 
   invoke(vm, stream, record) {
     return this.computation(vm, stream, record);
+  }
+}
+
+
+class Partial {
+  constructor(callee, options) {
+    this.callee = callee;
+    this.options = options;
+  }
+
+  invoke(vm, input, _) {
+    return this.callee.invoke(vm, input, this.options);
   }
 }
 
@@ -34,10 +64,28 @@ class Procedure {
     try {
       return vm.evaluate(this.expression, this.environment);
     } catch (error) {
-      throw new Error(`Error evaluating ${name}: ${error.name} - ${error.message}`);
+      throw new Error(`Error evaluating ${this.name}: ${error.name} - ${error.message}`);
     }
   }
 }
+
+
+class Thunk {
+  constructor(name, environment, expression) {
+    this.name = name;
+    this.environment = environment;
+    this.expression = expression;
+  }
+
+  invoke(vm) {
+    try {
+      return vm.evaluate(this.expression, this.environment);
+    } catch (error) {
+      throw new Error(`Error evaluating ${this.name}: ${error.name} - ${error.message}`);
+    }
+  }
+}
+
 
 
 class Environment {
@@ -57,15 +105,22 @@ class Environment {
     if (name in this.bindings) {
       throw new Error(`${name} is already defined`);
     } else {
-      this.bindings[name] = value;
+      this.bindings[name] = invokable;
     }
+  }
+
+  extend(bindings) {
+    Object.keys(bindings).forEach(key => {
+      this.define(key, bindings[key]);
+    });
   }
 }
 
 
 class FuripotaVM {
-  constructor() {
+  constructor({ baseDirectory }) {
     this.global = new Environment(null);
+    this.baseDirectory = baseDirectory;
   }
 
   evaluate(ast, environment) {
@@ -73,11 +128,17 @@ class FuripotaVM {
       Identifier: ({ name }) =>
         name,
 
+      Keyword: ({ name }) =>
+        name,
+
       Text: ({ value }) =>
         value,
 
-      Number: ({ value }) =>
-        value,
+      Integer: ({ sign, value }) =>
+        Number(sign + value),
+
+      Decimal: ({ sign, integral, decimal, exponent }) =>
+        Number(sign + integral + '.' + (decimal || '0') + exponent),
 
       Vector: ({ items }) =>
         items,
@@ -85,7 +146,7 @@ class FuripotaVM {
       Record: ({ pairs }) =>
         fromPairs(pairs.map(([key, value]) => {
           return [
-            key,
+            this.evaluate(key, environment),
             this.evaluate(value, environment)
           ];
         })),
@@ -94,7 +155,7 @@ class FuripotaVM {
         const name = this.evaluate(id, environment);
         environment.define(
           name,
-          new Procedure(name, environment, expression)
+          new Thunk(name, environment, expression)
         );
         return null;
       },
@@ -102,38 +163,71 @@ class FuripotaVM {
       Import: ({ path }) =>
         this.import(path),
 
-      Invoke: ({ callee, stream, record }) =>
-        this.evaluate(callee, environment).invoke(
+      Invoke: ({ callee, input, options }) => {
+        const fn = this.evaluate(callee, environment);
+        return fn.invoke(
           this,
-          this.evaluate(stream, environment),
-          this.evaluate(record, environment)
+          this.evaluate(input, environment),
+          this.evaluate(options, environment)
+        );
+      },
+
+      Partial: ({ callee, options }) =>
+        new Partial(
+          this.evaluate(callee, environment),
+          this.evaluate(options, environment)
         ),
 
-      Pipe: ({ input, mapping, record }) => {
+
+      Pipe: ({ input, transformation }) => {
         const stream = this.evaluate(input, environment);
-        const fn = this.evaluate(mapping, environment);
+        const fn = this.evaluate(transformation, environment);
         return stream.chain(
-          (value) => fn.invoke(this, value, record)
+          (value) => fn.invoke(this, value, {})
         );
       },
 
       Variable: ({ id }) => {
         const name = this.evaluate(id, environment);
-        return environment.get(name);
+        const value = environment.get(name);
+        if (value instanceof Thunk) {
+          return value.invoke(this);
+        } else {
+          return value;
+        }
+      },
+
+      Program: ({ declarations }) => {
+        declarations.forEach(d => this.evaluate(d, environment));
       }
     });
   }
 
-  import(path) {
-    throw new Error('TODO');
+  async import(file) {
+    const fullPath = path.resolve(this.baseDirectory, file);
+    const ast = parse(await readAsText(fullPath));
+    this.evaluate(ast, this.global);
   }
 
-  static procedure(name, environment, expression) {
+  plugin(fn) {
+    const bindings = fn(this);
+    this.global.extend(mapValues(bindings, (x) => new Primitive(x)));
+  }
+
+  procedure(name, environment, expression) {
     return new Procedure(name, environment, expression);
   }
 
-  static primitive(fn) {
+  primitive(fn) {
     return new Primitive(fn);
+  }
+
+  stream(producer) {
+    return new Stream(producer);
+  }
+
+  get Stream() {
+    return Stream;
   }
 }
 
