@@ -10,7 +10,7 @@ ast:
 
 ***
 
-f "a" opt: "b"
+f "a" opt: "b", another: "c"
 ---
 result: OK
 rule: Invoke
@@ -21,3 +21,4 @@ ast:
   options: 
     !Record
     - [!Keyword opt, !Text b]
+    - [!Keyword another, !Text c]

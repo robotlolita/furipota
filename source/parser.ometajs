@@ -27,7 +27,6 @@ ometa FuripotaParser {
   ignored = space | comment,
   comment = fromTo('#', '\n'):a -> a.slice(1),
   ws      = ignored*,
-  sws     = ignored+,
   kw :xs  = seq(xs) ~(letter | digit | '-' | '_' | ':'),
   idStart = letter,
   idRest  = (letter | digit | '-' | '_'),
@@ -91,7 +90,7 @@ ometa FuripotaParser {
 
   Record = '{' ws '}'
            -> ast.Record([])
-         | Keyword:k ws expression:v (sws Keyword:k1 ws expression:v1 -> [k1, v1])*:xs
+         | Keyword:k ws expression:v (ws ',' ws Keyword:k1 ws expression:v1 -> [k1, v1])*:xs
            -> ast.Record([[k, v]].concat(xs)),
 
 
