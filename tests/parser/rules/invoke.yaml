@@ -1,0 +1,23 @@
+f "a"
+---
+result: OK
+rule: Invoke
+ast:
+  !Invoke
+  callee: !Variable { id: !Identifier f }
+  input: !Text a
+  options: !Record []
+
+***
+
+f "a" opt: "b"
+---
+result: OK
+rule: Invoke
+ast:
+  !Invoke
+  callee: !Variable { id: !Identifier f }
+  input: !Text a
+  options: 
+    !Record
+    - [!Keyword opt, !Text b]
