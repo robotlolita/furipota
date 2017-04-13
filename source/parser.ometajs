@@ -112,10 +112,10 @@ ometa FuripotaParser {
          -> ast.Pipe(a, t)
        | Invoke,
 
-  Invoke = Identifier:i ws expression:v ws Record?:r
-           -> ast.Invoke(ast.Variable(i), v, r || ast.Record([]))
-         | Identifier:i ws '_' ws Record?:r
-           -> ast.Partial(ast.Variable(i), r || ast.Record([]))
+  Invoke = primaryExpression:i ws Invoke:v ws Record?:r
+           -> ast.Invoke(i, v, r || ast.Record([]))
+         | primaryExpression:i ws '_' ws Record?:r
+           -> ast.Partial(i, r || ast.Record([]))
          | primaryExpression,
 
   primaryExpression = value

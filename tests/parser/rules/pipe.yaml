@@ -1,0 +1,15 @@
+f "hello" > g _
+---
+result: OK
+rule: Pipe
+ast:
+  !Pipe
+  input:
+    !Invoke
+    callee: !Variable { id: !Identifier f }
+    input: !Text "hello"
+    options: !Record []
+  transformation: 
+    !Partial
+    callee: !Variable { id: !Identifier g }
+    options: !Record []

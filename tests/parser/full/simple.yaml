@@ -12,7 +12,7 @@ ast:
     id: !Identifier source
     expression:
       !Invoke
-      callee: !Identifier watch
+      callee: !Variable { id: !Identifier watch }
       input: !Text "src/*.js"
       options: !Record []
   - !Define
@@ -22,7 +22,7 @@ ast:
       input: !Variable { id: !Identifier source }
       transformation:
         !Partial
-        callee: !Identifier babel
+        callee: !Variable { id: !Identifier babel }
         options:
           !Record
           - [!Keyword output-directory, !Text lib]
