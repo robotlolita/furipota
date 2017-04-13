@@ -12,6 +12,7 @@ module.exports = (furipota) => {
 
   return extend(
     require('./debug')(furipota),
-    require('./file')(furipota)
+    require('./file')(furipota),
+    require('./core')(furipota)
   );
 };
