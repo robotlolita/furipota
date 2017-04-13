@@ -10,7 +10,7 @@ ast:
 
 ***
 
-f "a" opt: "b", another: "c"
+f "a" opt: "b" another: "c"
 ---
 result: OK
 rule: Invoke

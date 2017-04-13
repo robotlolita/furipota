@@ -27,6 +27,7 @@ ometa FuripotaParser {
   ignored = space | comment,
   comment = fromTo('#', '\n'):a -> a.slice(1),
   ws      = ignored*,
+  sws     = ignored+,
   kw :xs  = seq(xs) ~(letter | digit | '-' | '_' | ':'),
   idStart = letter,
   idRest  = (letter | digit | '-' | '_'),
@@ -85,13 +86,18 @@ ometa FuripotaParser {
 
   Vector = '[' ws ']'
            -> ast.Vector([])
-         | '[' ws expression:a (ws ',' ws expression)*:as ws ']'
+         | expression:a (ws ',' ws expression)*:as
            -> ast.Vector([a].concat(as)),
 
   Record = '{' ws '}'
            -> ast.Record([])
-         | Keyword:k ws expression:v (ws ',' ws Keyword:k1 ws expression:v1 -> [k1, v1])*:xs
-           -> ast.Record([[k, v]].concat(xs)),
+         | recordPair:a (sws recordPair)*:xs
+           -> ast.Record([a].concat(xs)),
+
+  recordPair = Keyword:k ws recordExpression:v -> [k, v],
+
+  recordExpression = primaryExpression
+                   | Vector,
 
   Lambda = '|' ws Identifier:a (ws Identifier)?:r ws '|' ws expression:e
          -> ast.Lambda(a, r || ast.Identifier('_'), e),
@@ -108,19 +114,24 @@ ometa FuripotaParser {
 
 
   // --[ Expressions ]
-  expression = Pipe,
+  expression = Pipe
+             | Lambda
+             | Record
+             | Vector,
 
   Pipe = Pipe:a ws '>' ws Invoke:t
          -> ast.Pipe(a, t)
        | Invoke,
 
-  Invoke = primaryExpression:i ws primaryExpression:v ws Record?:r
+  Invoke = Invoke:i ws primaryExpression:v ws Record?:r
            -> ast.Invoke(i, v, r || ast.Record([]))
-         | primaryExpression:i ws '_' ws Record?:r
+         | Invoke:i ws '_' ws Record?:r
            -> ast.Partial(i, r || ast.Record([]))
          | primaryExpression,
 
-  primaryExpression = value
+  primaryExpression = Boolean
+                    | Text
+                    | Number
                     | Identifier:i               -> ast.Variable(i)
                     | '(' ws expression:a ws ')' -> a,
 

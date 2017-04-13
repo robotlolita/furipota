@@ -44,7 +44,7 @@ const AST = data('furipota:ast', {
   },
 
   Lambda(value, options, expression) {
-    return { value, options, expression }
+    return { value, options, expression };
   },
 
   // --[ Declarations ]-------------------------------------------------
