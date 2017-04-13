@@ -11,7 +11,9 @@ const ast = require('./ast');
 
 var reserved = [
   'define',
-  'import'
+  'import',
+  'true',
+  'false'
 ];
 
 function isValid(id) {
@@ -59,7 +61,10 @@ ometa FuripotaParser {
 
 
   // --[ Values ]
-  value = Number | Text | Vector | Record,
+  value = Boolean | Number | Text | Vector | Record,
+
+  Boolean = kw('true') -> ast.Boolean(true)
+          | kw('false') -> ast.Boolean(false),
 
   Number = sign?:s ( '0' 'b' binDigits:n
                      -> ast.Integer(s || '+', parseInt(n, 2).toString())

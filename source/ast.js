@@ -31,6 +31,10 @@ const AST = data('furipota:ast', {
     return { sign, integral, decimal, exponent };
   },
 
+  Boolean(value) {
+    return { value };
+  },
+
   Vector(items) {
     return { items };
   },

@@ -134,6 +134,9 @@ class FuripotaVM {
       Text: ({ value }) =>
         value,
 
+      Boolean: ({ value }) =>
+        value,
+
       Integer: ({ sign, value }) =>
         Number(sign + value),
 
