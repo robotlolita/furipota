@@ -60,7 +60,7 @@ ometa FuripotaParser {
 
 
   // --[ Values ]
-  value = Boolean | Number | Text | Vector | Record,
+  value = Boolean | Number | Text | Vector | Record | Lambda,
 
   Boolean = kw('true') -> ast.Boolean(true)
           | kw('false') -> ast.Boolean(false),
@@ -93,6 +93,9 @@ ometa FuripotaParser {
          | Keyword:k ws expression:v (ws ',' ws Keyword:k1 ws expression:v1 -> [k1, v1])*:xs
            -> ast.Record([[k, v]].concat(xs)),
 
+  Lambda = '|' ws Identifier:a (ws Identifier)?:r ws '|' ws expression:e
+         -> ast.Lambda(a, r || ast.Identifier('_'), e),
+
 
   // --[ Declarations ]
   declaration = Define | Import,
@@ -107,7 +110,7 @@ ometa FuripotaParser {
   // --[ Expressions ]
   expression = Pipe,
 
-  Pipe = Pipe:a ws '>' ws expression:t
+  Pipe = Pipe:a ws '>' ws Invoke:t
          -> ast.Pipe(a, t)
        | Invoke,
 

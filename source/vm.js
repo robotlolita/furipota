@@ -74,6 +74,31 @@ ${error.stack}
 }
 
 
+class Lambda {
+  constructor(environment, expression, valueParam, optionsParam) {
+    this.environment = environment;
+    this.expression = expression;
+    this.valueParam = valueParam;
+    this.optionsParam = optionsParam;
+  }
+
+  invoke(vm, value, options) {
+    try {
+      const env = new Environment(this.environment);
+      env.define(this.valueParam, value);
+      env.define(this.optionsParam, options);
+      return vm.evaluate(this.expression, env);
+    } catch (error) {
+      throw new Error(`Error evaluating lambda.
+      
+${error.stack}
+
+`);
+    }
+  }
+}
+
+
 class Thunk {
   constructor(name, environment, expression) {
     this.name = name;
@@ -98,7 +123,7 @@ ${error.stack}
 
 class Environment {
   constructor(base) {
-    this.bindings = Object.create(base);
+    this.bindings = Object.create(base ? base.bindings : null);
   }
 
   get(name) {
@@ -161,6 +186,9 @@ class FuripotaVM {
             this.evaluate(value, environment)
           ];
         })),
+
+      Lambda: ({ value, options, expression }) =>
+        new Lambda(environment, expression, value, options),
 
       Define: ({ id, expression }) => {
         const name = this.evaluate(id, environment);

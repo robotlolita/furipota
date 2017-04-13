@@ -43,6 +43,10 @@ const AST = data('furipota:ast', {
     return { pairs };
   },
 
+  Lambda(value, options, expression) {
+    return { value, options, expression }
+  },
+
   // --[ Declarations ]-------------------------------------------------
   Define(id, expression) {
     return { id, expression };
