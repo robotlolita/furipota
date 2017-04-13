@@ -177,7 +177,7 @@ class FuripotaVM {
         Number(sign + integral + '.' + (decimal || '0') + exponent),
 
       Vector: ({ items }) =>
-        items,
+        items.map(x => this.evaluate(x, environment)),
 
       Record: ({ pairs }) =>
         fromPairs(pairs.map(([key, value]) => {
