@@ -64,7 +64,11 @@ class Procedure {
     try {
       return vm.evaluate(this.expression, this.environment);
     } catch (error) {
-      throw new Error(`Error evaluating ${this.name}: ${error.name} - ${error.message}`);
+      throw new Error(`Error evaluating ${this.name}.
+      
+${error.stack}
+
+`);
     }
   }
 }
@@ -81,7 +85,11 @@ class Thunk {
     try {
       return vm.evaluate(this.expression, this.environment);
     } catch (error) {
-      throw new Error(`Error evaluating ${this.name}: ${error.name} - ${error.message}`);
+      throw new Error(`Error evaluating ${this.name}.
+      
+${error.stack}
+
+`);
     }
   }
 }
