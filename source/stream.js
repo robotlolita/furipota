@@ -8,37 +8,55 @@
 //----------------------------------------------------------------------
 
 class Stream {
-  constructor(producer) {
+  constructor(producer, name) {
     this.producer = producer;
     this.listeners = [];
+    this.running = false;
+    this.name = name;
   }
 
   chain(transformation) {
     return new Stream((producer) => {
+      let pending = [];
+      const maybeClose = (x) => async () => {
+        pending = pending.filter(a => a !== x);
+        if (!pending.length) {
+          await producer.close();
+        }
+      }
+
       this.subscribe({
         Value(x) {
           const stream = transformation(x);
           stream.subscribe({
             Value: producer.pushValue,
             Error: producer.pushError,
-            Close: producer.close
+            Close: maybeClose(stream)
           });
+          pending.push(stream);
           stream.run();
         },
 
         Error: producer.pushError,
-        Close: producer.close
+        Close: maybeClose(this)
       });
 
+      pending.push(this);
       this.run();
-    });
+    }, this.name + ' chain');
   }
 
   static of(value) {
     return new Stream(async (producer) => {
       await producer.pushValue(value);
       await producer.close();
-    });
+    }, 'of');
+  }
+
+  static empty() {
+    return new Stream(async (producer) => {
+      await producer.close();
+    }, 'empty');
   }
 
   map(transformation) {
@@ -57,9 +75,20 @@ class Stream {
 
   subscribe(handler) {
     this.listeners.push(handler);
+    return handler;
+  }
+
+  unsubscribe(handler) {
+    this.listeners = this.listeners.filter(x => x !== handler);
+    return handler;
   }
 
   run() {
+    if (this.running) {
+      return;
+    }
+    this.running = true;
+
     return new Promise((resolve, reject) => {
       const listeners = this.listeners;
       let closed = false;
@@ -88,7 +117,7 @@ class Stream {
         }
       };
 
-      this.producer(operations);
+      this.producer(operations, this);
     });
   }
 }

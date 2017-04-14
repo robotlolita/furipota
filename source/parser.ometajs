@@ -11,9 +11,10 @@ const ast = require('./ast');
 
 var reserved = [
   'define',
-  'import',
-  'true',
-  'false'
+  'import', 'core', 'plugin', 'export', 'as',
+  'true', 'false',
+  'let', 'in',
+  'if', 'then', 'else',
 ];
 
 function isValid(id) {
@@ -94,7 +95,7 @@ ometa FuripotaParser {
 
   Vector = '[' ws ']'
            -> ast.Vector([])
-         | expression:a (ws ',' ws expression)*:as
+         | '[' ws expression:a (ws ',' ws expression)*:as ws ']'
            -> ast.Vector([a].concat(as)),
 
   Record = '{' ws '}'
@@ -107,44 +108,68 @@ ometa FuripotaParser {
   recordExpression = primaryExpression
                    | Vector,
 
-  Lambda = '|' ws Identifier:a (ws Identifier)?:r ws '|' ws expression:e
-         -> ast.Lambda(a, r || ast.Identifier('_'), e),
+  Lambda = '|' (ws Identifier)+:as (ws '@' ws Identifier)?:r ws '|' ws expression:e
+         -> makeLambda(as.concat([r || ast.Identifier('_')]), e),
 
 
   // --[ Declarations ]
-  declaration = Define | Import,
+  declaration = Define | Import | Export,
 
   Define = kw('define') ws Identifier:i ws '=' doc?:d ws expression:e
            -> ast.Define(i, e, d || '')
-         | kw('define') ws Identifier:i ws argNames:as '=' doc?:d ws expression:e,
+         | kw('define') ws Identifier:i ws argNames:as ws '=' doc?:d ws expression:e
            -> ast.Define(i, makeLambda(as, e), d || ''),
 
-  argNames = Identifier:a (ws Identifier)*:as ws Identifier:r -> [a].concat(as, [r]),
+  argNames = (ws Identifier)+:as (ws '@' Identifier)?:r -> as.concat([r || ast.Identifier('_')]),
   doc = (space* comment)*:xs -> xs.join(''),
 
-  Import = kw('import') ws Text:p
-           -> ast.Import(p),
+  Import = kw('import') ws importKind?:k ws Text:p ws kw('as') ws Identifier:i
+           -> ast.ImportAliasing(p, i, k || 'furipota')
+         | kw('import') ws importKind?:k ws Text:p
+           -> ast.Import(p, k || 'furipota'),
 
+  importKind = kw('core') | kw('plugin'),
+
+  Export = kw('export') ws Define:d
+           -> ast.Seq([d, ast.Export(d.id)])
+         | kw('export') ws Identifier:i ws kw('as') ws Identifier:a
+           -> ast.ExportAliasing(i, a)
+         | kw('export') ws Identifier:i
+           -> ast.Export(i),
 
   // --[ Expressions ]
   expression = Pipe
              | Lambda
              | Record
-             | Vector,
+             | Let
+             | IfThenElse,
 
-  Pipe = Pipe:a ws '>' ws Invoke:t
+  Let = kw('let') ws Identifier:i ws '=' ws expression:v ws kw('in') ws expression:e
+        -> ast.Let(i, v, e),
+
+  IfThenElse = kw('if') ws expression:c
+                 ws kw('then') ws expression:t
+                 ws kw('else') ws expression:e
+               -> ast.IfThenElse(c, t, e),
+
+  Pipe = Pipe:a ws seq('|>') ws Invoke:t
          -> ast.Pipe(a, t)
        | Invoke,
 
-  Invoke = Invoke:i ws primaryExpression:v ws Record?:r
+  Invoke = Invoke:i ws memberExpression:v ws Record?:r
            -> ast.Invoke(i, v, r || ast.Record([]))
          | Invoke:i ws '_' ws Record?:r
            -> ast.Partial(i, r || ast.Record([]))
-         | primaryExpression,
+         | memberExpression,
+
+  memberExpression = memberExpression:m ws '.' ws Identifier:i
+                     -> ast.Get(m, i)
+                   | primaryExpression,
 
   primaryExpression = Boolean
                     | Text
                     | Number
+                    | Vector
                     | Identifier:i               -> ast.Variable(i)
                     | '(' ws expression:a ws ')' -> a,
 

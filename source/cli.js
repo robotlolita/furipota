@@ -11,7 +11,6 @@
 const program = require('commander');
 const path = require('path');
 const VM = require('./vm');
-const runtime = require('./runtime');
 const package = require('../package.json');
 
 const collect = (value, memo) => {
@@ -19,28 +18,17 @@ const collect = (value, memo) => {
   return memo;
 };
 
-const toModuleId = (module) => {
-  if (/^\./.test(module)) {
-    return path.resolve(process.cwd(), module);
-  } else {
-    return module;
-  }
-};
-
 
 program.version(package.version);
 
-program.command('run <file> <pipeline>')
+program.command('run <file> <expression>')
   .description(`Runs the provided pipeline to completion.`)
-  .option('-p, --plugin [module]', 'The module ID of a Furipota plugin', collect, [])
-  .action(async (definitions, pipeline, options) => {
+  .action(async (file, expr, options) => {
     try {
-      const file = path.resolve(process.cwd(), definitions);
-      const vm = new VM(path.dirname(file));
-      vm.plugin(runtime);
-      options.plugin.forEach(plugin => vm.plugin(require(toModuleId(plugin))));
-      await vm.import(file);
-      const stream = vm.global.get(pipeline).invoke(vm);
+      const fullPath = path.resolve(process.cwd(), file);
+      const vm = VM.fromFile(fullPath);
+      const ast = vm.parseExpression(expr);
+      const stream = vm.evaluate(ast, vm.module.environment);
       stream.subscribe({
         Value(x){ },
         Error(x){

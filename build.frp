@@ -1,0 +1,31 @@
+%furipota/1
+
+import core "prelude"
+import core "text" as Text
+
+define js-sources    = find "source/**/*.js"
+define ometa-sources = find "source/**/*.ometajs"
+
+define npm-bin name =
+  path [directory self.filename, "node_modules", ".bin", name]
+
+define ometa path @options =
+  run (npm-bin "ometajs2js") ["--input", path, "--output", options.output]
+
+define with-ext ext file =
+  path [directory file, Text.concat (basename file omit-extension: true) ext]
+
+# -- [ Tasks ]
+define build =
+  # Compiles the Furipota VM
+  let build-dir = "furipota" in
+  let target = |x| path [build-dir, relative "source" x] in
+  sequential [
+    trace "MKDIR" (make-directory build-dir),
+    parallel [
+      js-sources
+        |> (|x| trace "COPY" (copy x.path to: (target x.path))),
+      ometa-sources
+        |> (|x| trace "OMETA" (ometa x.path output: (with-ext ".js" (target x.path))))
+    ]
+  ]

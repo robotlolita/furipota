@@ -11,21 +11,49 @@ module.exports = (furipota) => {
   const chalk = require('chalk');
   const moment = require('moment');
   const { inspect } = require('util');
-  const { stream, Stream } = furipota;
-  
+  const { compact } = require('./utils')(furipota);
+  const { primitive, stream, Stream } = furipota;
+
   const prefix = (x) => chalk.blue(x);
   const date = (x) => chalk.grey(x);
+  const ok = (x) => chalk.green(x);
+  const err = (x) => chalk.red(x);
+  const close = (x) => chalk.grey(x);
 
   return {
-    trace: (vm, value, options) => {
-      let line = [
-        prefix(options.prefix || '[TRACE]'),
-        ...(options['include-dates'] ?  [date(moment().format('hh:mm:ss'))] : []),
-        inspect(value, options['show-hidden-properties'], options['depth'] || 3, options['colour'])
-      ];
+    trace: (vm, tag) => {
+      return primitive((vm, stream, options) => { 
+        const NONE = {};
+        const show = (kind, data) => {
+          const date = options['date-format'] ? [date(moment().format(date-format))]
+          :            /* else */               [];
 
-      console.error(line.join(' '))
+          const inspectOptions = [
+            options['show-hidden-properties'],
+            options['depth'] == null ? 3 : options['depth'],
+            options['color'] == null ? true : options['color']
+          ];
+
+          const value = data !== NONE ?  [inspect(data, ...inspectOptions)]
+          :             /* else */       [];
+
+          let line = [prefix(tag), kind, ...date, ...value];
+          console.error(line.join(' '));
+        }
+
+        stream.subscribe({
+          Value: (val) => show(ok ('OK   '), val),
+          Error: (val) => show(err('ERROR'), val),
+          Close: () =>    show(close('CLOSE'), NONE)
+        });
+
+        return stream;
+      });
+    },
+
+    log: (vm, value, options) => {
+      console.log(value);
       return Stream.of(value);
     }
-  }
+  };
 };

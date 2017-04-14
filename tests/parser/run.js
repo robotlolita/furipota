@@ -55,7 +55,7 @@ const Define = new yaml.Type('!Define', {
 
 const Import = new yaml.Type('!Import', {
   kind: 'mapping',
-  construct: ({ path }) => ast.Import(path)
+  construct: ({ path, kind }) => ast.Import(path, kind)
 });
 
 const Invoke = new yaml.Type('!Invoke', {

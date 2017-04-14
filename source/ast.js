@@ -10,6 +10,10 @@
 const { data, derivations } = require('folktale/core/adt');
 
 const AST = data('furipota:ast', {
+  Seq(items) {
+    return { items };
+  },
+
   // --[ Basic entities ]-----------------------------------------------
   Identifier(name) {
     return { name };
@@ -52,8 +56,20 @@ const AST = data('furipota:ast', {
     return { id, expression, documentation };
   },
 
-  Import(path) {
-    return { path };
+  Import(path, kind) {
+    return { path, kind };
+  },
+
+  ImportAliasing(path, alias, kind) {
+    return { path, alias, kind };
+  },
+
+  Export(identifier) {
+    return { identifier };
+  },
+
+  ExportAliasing(identifier, alias) {
+    return { identifier, alias };
   },
 
   // --[ Expressions ]--------------------------------------------------
@@ -73,6 +89,18 @@ const AST = data('furipota:ast', {
     return { id };
   },
 
+  Let(binding, value, expression) {
+    return { binding, value, expression };
+  },
+
+  IfThenElse(condition, consequent, alternate) {
+    return { condition, consequent, alternate };
+  },
+
+  Get(expression, property) {
+    return { expression, property };
+  },
+
   // --[ Entry point ]--------------------------------------------------
   Program(declarations) {
     return { declarations };
@@ -83,12 +111,114 @@ const AST = data('furipota:ast', {
   derivations.serialization
 );
 
+const provide = (union, method, pattern) =>
+  Object.keys(pattern).forEach(k => union[k].prototype[method] = pattern[k]);
+
+const needsParenthesis = (ast) =>
+  ![AST.Identifier, AST.Keyword, AST.Text, AST.Integer, AST.Decimal, AST.Boolean, AST.Record, AST.Vector, AST.Variable].some(
+    x => x.hasInstance(ast)
+  );
+
+const p = (ast, depth) =>
+  needsParenthesis(ast) ? `(${ast.prettyPrint(depth)})`
+: /* otherwise */         ast.prettyPrint(depth);
+
+
+provide(AST, 'prettyPrint', {
+  Seq(depth) {
+    return this.items.map(x => x.prettyPrint(depth)).join('\n' + ' '.repeat(depth));
+  },
+
+  Identifier(depth) {
+    return this.name;
+  },
+
+  Keyword(depth) {
+    return this.name + ':';
+  },
+
+  Text(depth) {
+    return JSON.stringify(this.value);
+  },
+
+  Integer(depth) {
+    return this.sign + this.value;
+  },
+
+  Decimal(depth) {
+    return this.sign + this.integral + '.' + this.decimal + (this.exponent || '');
+  },
+
+  Boolean(depth) {
+    return String(this.value);
+  },
+
+  Vector(depth) {
+    return '[' + this.items.map(x => x.prettyPrint(depth)).join(', ') + ']';
+  },
+
+  Record(depth) {
+    return '{' + this.pairs.map(([k, v]) => k.prettyPrint(depth) + ' ' + p(v, depth)).join(' ') + '}';
+  },
+
+  Lambda(depth) {
+    return `|${this.value.prettyPrint(depth)} @${this.options.prettyPrint(depth)}| ${this.expression.prettyPrint(depth)}`
+  },
+
+  Define(depth) {
+    return 'define ' + this.id.prettyPrint(depth) + ' = \n' + ' '.repeat(depth + 2) + this.expression.prettyPrint(depth + 2);
+  },
+
+  Import(depth) {
+    return 'import ' + this.kind + ' ' + this.path.prettyPrint(depth);
+  },
+
+  ImportAliasing(depth) {
+    return 'import ' + this.kind + ' ' + this.path.prettyPrint(depth) + ' as ' + this.alias.prettyPrint(depth);
+  },
+
+  Export(depth) {
+    return 'export ' + this.identifier.prettyPrint(depth);
+  },
+
+  ExportAliasing(depth) {
+    return 'export ' + this.identifier.prettyPrint(depth) + ' as ' + this.alias.prettyPrint(depth);
+  },
+
+  Invoke(depth) {
+    return p(this.callee, depth) + ' ' + p(this.input, depth) + ' ' + this.options.prettyPrint(depth); 
+  },
+
+  Partial(depth) {
+    return p(this.callee, depth) + ' _ ' + this.options.prettyPrint(depth);
+  },
+
+  Pipe(depth) {
+    return p(this.input, depth) + ' |> ' + p(this.transformation, depth); 
+  },
+
+  Variable(depth) {
+    return this.id.prettyPrint(depth);
+  },
+
+  Let(depth) {
+    return 'let ' + this.binding.prettyPrint(depth) + ' = ' + this.value.prettyPrint(depth) + ' in\n'
+    +      ' '.repeat(depth) + this.expression.prettyPrint(depth); 
+  },
+
+  IfThenElse(depth) {
+    return 'if ' + this.condition.prettyPrint(depth) + ' then ' + this.consequent.prettyPrint(depth) + ' else ' + this.alternate.prettyPrint(depth);
+  },
+
+  Get(depth) {
+    return p(this.expression, depth) + '.' + this.property.prettyPrint(depth);
+  },
+
+  Program(depth) {
+    return this.declarations.map(x => x.prettyPrint(depth)).join('\n' + ' '.repeat(depth));
+  }
+});
+
+
 
 module.exports = AST;
-
-// define binding = a opt: v > b > c
-// "string"
-// 1029
-// [array]
-// record: value
-// import "module-id"

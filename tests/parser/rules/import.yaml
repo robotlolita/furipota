@@ -5,3 +5,4 @@ rule: Import
 ast:
   !Import
   path: !Text "path"
+  kind: furipota

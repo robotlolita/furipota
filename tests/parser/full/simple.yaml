@@ -7,7 +7,9 @@ define compile = source > babel _ output-directory: "lib"
 result: OK
 ast:
   !Program
-  - !Import { path: !Text "core" }
+  - !Import
+    path: !Text "core"
+    kind: furipota
   - !Define
     id: !Identifier source
     expression:
