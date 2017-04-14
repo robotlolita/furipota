@@ -16,8 +16,9 @@ define with-ext ext file =
   path [directory file, Text.concat (basename file omit-extension: true) ext]
 
 # -- [ Tasks ]
+export 
 define build =
-  # Compiles the Furipota VM
+  # Compiles the Furipota VM.
   let build-dir = "furipota" in
   let target = |x| path [build-dir, relative "source" x] in
   sequential [
