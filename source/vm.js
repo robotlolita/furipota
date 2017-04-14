@@ -10,11 +10,13 @@
 const path = require('path');
 const fs = require('fs');
 const { fromPairs, mapValues } = require('folktale/core/object');
+const { inspect } = require('util');
 
 const AST = require('./ast');
 const Parser = require('./parser').FuripotaParser;
 const Stream = require('./stream');
 const runtime = require('./runtime');
+const Path = require('./runtime/path');
 
 const hasOwnProperty = (x, p) => Object.prototype.hasOwnProperty.call(x, p);
 
@@ -43,19 +45,29 @@ function getType(x) {
   :      x instanceof Thunk       ?  'Thunk'
   :      x instanceof Buffer      ?  'Buffer'
   :      x instanceof Stream      ?  'Stream'
-  :      /* otherwise */             'Record';
+  :      x instanceof Tagged      ?  `^${x.tag}`
+  :      Object(x) === x          ?  'Record'
+  :      /* else */                  'Unknown Type';
 }
 
 function assertInvokable(fn, value) {
   const type = getType(value);
   if (!['Primitive', 'Partial', 'Lambda', 'Thunk'].includes(type)) {
-    throw new TypeError(`${fn} expected an invokable procedure (Lambda, Primitive, Partial, or Thunk), but got ${type} instead.`);
+    let details = '';
+    if (process.env.SHOW_JS) {
+      details = '\n\n' + inspect(value, true, 5, true);
+    }
+    throw new TypeError(`${fn} expected an invokable procedure (Lambda, Primitive, Partial, or Thunk), but got ${type} instead.${details}`);
   }
 }
 
 function assertType(fn, type, value) {
   if (getType(value) !== type) {
-    throw new TypeError(`${fn} expected a value of type ${type}, but got ${getType(value)} instead.`);
+    let details = '';
+    if (process.env.SHOW_JS) {
+      details = '\n\n' + inspect(value, true, 5, true);
+    }
+    throw new TypeError(`${fn} expected a value of type ${type}, but got ${getType(value)} instead.${details}`);
   }
 }
 
@@ -73,37 +85,31 @@ class Primitive {
 
 
 class Partial {
-  constructor(callee, options) {
+  constructor(callee, options, ast) {
     this.callee = callee;
     this.options = options;
+    this.fullAst = ast;
   }
 
-  invoke(vm, input, _) {
-    return this.callee.invoke(vm, input, this.options);
+  invoke(vm, input, _, stack) {
+    return this.callee.invoke(vm, input, this.options, [...stack, { procedure: '(partial)', ast: this.fullAst }]);
   }
 }
 
 class Lambda {
-  constructor(environment, expression, valueParam, optionsParam) {
+  constructor(environment, expression, valueParam, optionsParam, ast) {
     this.environment = environment;
     this.expression = expression;
     this.valueParam = valueParam;
     this.optionsParam = optionsParam;
+    this.fullAst = ast;
   }
 
-  invoke(vm, value, options) {
-    try {
-      const env = new Environment(this.environment);
-      env.define(this.valueParam, value);
-      env.define(this.optionsParam, options);
-      return vm.evaluate(this.expression, env);
-    } catch (error) {
-      throw new Error(`Error evaluating lambda.
-
-${error.stack}
-
-`);
-    }
+  invoke(vm, value, options, stack) {
+    const env = new Environment(this.environment);
+    env.define(this.valueParam, value);
+    env.define(this.optionsParam, options);
+    return vm.evaluate(this.expression, env, [...stack, { procedure: '(lambda)', ast: this.fullAst }]);
   }
 }
 
@@ -126,36 +132,37 @@ class NativeThunk {
 
 
 class Thunk {
-  constructor(name, environment, expression, documentation) {
+  constructor(name, environment, expression, documentation, ast) {
     this.name = name;
     this.environment = environment;
     this.expression = expression;
     this.documentation = documentation;
     this.value = null;
     this.computed = false;
+    this.fullAst = ast;
   }
 
   get autoInvoke() {
     return true;
   }
 
-  invoke(vm) {
+  invoke(vm, _, __, stack) {
     if (this.computed) {
       return this.value;
     }
 
-    try {
-      const value = vm.evaluate(this.expression, this.environment);
-      this.value = value;
-      this.computed = true;
-      return value;
-    } catch (error) {
-      throw new Error(`Error evaluating ${this.name}.
+    const value = vm.evaluate(this.expression, this.environment, [...stack, { procedure: this.name, ast: this.fullAst }]);
+    this.value = value;
+    this.computed = true;
+    return value;
+  }
+}
 
-${error.stack}
 
-`);
-    }
+class Tagged {
+  constructor(tag, value) {
+    this.tag = tag;
+    this.value = value;
   }
 }
 
@@ -166,9 +173,6 @@ class Module {
     this.baseName = path.dirname(fileName);
     this.exports = new Map();
     this.environment = new Environment(baseEnvironment);
-    this.environment.define('self', {
-      filename: fileName
-    })
   }
 
   exportAs(alias, identifier) {
@@ -183,6 +187,30 @@ class Module {
     return result;
   }
 }
+
+
+const formatStack = (stack) =>
+  stack.map(({ procedure, ast }) => {
+    if (procedure) {
+      return `at ${procedure}: ${ast.prettyPrint(7 + procedure.length)}`;
+    } else {
+      return `in ${ast.prettyPrint(5)}`;
+    }
+  });
+
+const ERROR_STACK_SIZE = 10;
+const furipotaError = (name, message, stack, jsStack) => {
+  const result = new Error(`${message}
+
+Furipota stack:
+  ${formatStack(stack.slice(-ERROR_STACK_SIZE)).join('\n  ')}
+
+${jsStack && process.env.SHOW_JS_STACK ? 'JavaScript stack:\n' + jsStack : ''}
+`);
+  result.name = name;
+  result.isFuripotaError = true;
+  return result;
+};
 
 
 class Environment {
@@ -222,153 +250,210 @@ class FuripotaVM {
     this.module = module || new Module('<vm>', this.global);
   }
 
-  evaluate(ast, environment) {
-    return ast.matchWith({
-      Seq: ({ items }) =>
-        last(items.map(x => this.evaluate(x, environment))),
+  evaluate(ast, environment, stack = []) {
+    if (process.env.TRACE_FURIPOTA) {
+      console.log('=>', ast);
+    }
 
-      Identifier: ({ name }) =>
-        name,
+    try {
+      return ast.matchWith({
+        Seq: ({ items }) =>
+          last(items.map(x => this.evaluate(x, environment, stack))),
 
-      Keyword: ({ name }) =>
-        name,
-
-      Text: ({ value }) =>
-        value,
-
-      Boolean: ({ value }) =>
-        value,
-
-      Integer: ({ sign, value }) =>
-        Number(sign + value),
-
-      Decimal: ({ sign, integral, decimal, exponent }) =>
-        Number(sign + integral + '.' + (decimal || '0') + exponent),
-
-      Vector: ({ items }) =>
-        items.map(x => this.evaluate(x, environment)),
-
-      Record: ({ pairs }) =>
-        fromPairs(pairs.map(([key, value]) => {
-          return [
-            this.evaluate(key, environment),
-            this.evaluate(value, environment)
-          ];
-        })),
-
-      Lambda: ({ value, options, expression }) => {
-        const theValue = this.evaluate(value, environment);
-        const theOptions = this.evaluate(options, environment);
-        return new Lambda(environment, expression, theValue, theOptions);
-      },
-
-      Define: ({ id, expression, documentation }) => {
-        const name = this.evaluate(id, environment);
-        environment.define(
+        Identifier: ({ name }) =>
           name,
-          new Thunk(name, environment, expression, documentation)
-        );
-        return null;
-      },
 
-      Import: ({ path, kind }) => {
-        const module = this.import(this.evaluate(path, environment), kind);
-        environment.extend(module.exportedBindings);
-      },
+        Keyword: ({ name }) =>
+          name,
 
-      ImportAliasing: ({ path, alias, kind }) => {
-        const thePath = this.evaluate(path, environment);
-        const theAlias = this.evaluate(alias, environment);
-        const module = this.import(thePath, kind);
+        Text: ({ value }) =>
+          value,
 
-        environment.define(theAlias, new NativeThunk(
-          theAlias,
-          module.exportedBindings,
-          `A ${kind} module from ${thePath}`
-        ));
-      },
+        Boolean: ({ value }) =>
+          value,
 
-      Export: ({ identifier }) => {
-        const id = this.evaluate(identifier, environment);
-        this.module.exportAs(id, id);
-      },
+        Integer: ({ sign, value }) =>
+          Number(sign + value),
 
-      ExportAliasing: ({ identifier, alias }) => {
-        const theId = this.evaluate(identifier, environment);
-        const theAlias = this.evaluate(alias, environment);
-        this.module.exportAs(theAlias, theId);
-      },
+        Decimal: ({ sign, integral, decimal, exponent }) =>
+          Number(sign + integral + '.' + (decimal || '0') + exponent),
 
-      Invoke: ({ callee, input, options }) => {
-        const fn = this.evaluate(callee, environment);
-        assertInvokable('Function application', fn);
+        Vector: ({ items }) =>
+          items.map(x => this.evaluate(x, environment, [...stack, { ast: x }])),
 
-        return fn.invoke(
-          this,
-          this.evaluate(input, environment),
-          this.evaluate(options, environment)
-        );
-      },
+        Record: ({ pairs }) =>
+          fromPairs(pairs.map(([key, value]) => {
+            return [
+              this.evaluate(key, environment, stack),
+              this.evaluate(value, environment, [...stack, { ast: value }])
+            ];
+          })),
 
-      Partial: ({ callee, options }) =>
-        new Partial(
-          this.evaluate(callee, environment),
-          this.evaluate(options, environment)
-        ),
+        Lambda: ({ value, options, expression }) => {
+          const theValue = this.evaluate(value, environment, stack);
+          const theOptions = this.evaluate(options, environment, stack);
+          return new Lambda(environment, expression, theValue, theOptions, ast);
+        },
+
+        Define: ({ id, expression, documentation }) => {
+          const name = this.evaluate(id, environment, stack);
+          environment.define(
+            name,
+            new Thunk(name, environment, expression, documentation, ast)
+          );
+          return null;
+        },
+
+        Import: ({ path, kind }) => {
+          const module = this.import(this.evaluate(path, environment, stack), kind);
+          environment.extend(module.exportedBindings);
+        },
+
+        ImportAliasing: ({ path, alias, kind }) => {
+          const thePath = this.evaluate(path, environment, stack);
+          const theAlias = this.evaluate(alias, environment, stack);
+          const module = this.import(thePath, kind);
+
+          environment.define(theAlias, new NativeThunk(
+            theAlias,
+            module.exportedBindings,
+            `A ${kind} module from ${thePath}`
+          ));
+        },
+
+        Export: ({ identifier }) => {
+          const id = this.evaluate(identifier, environment, stack);
+          this.module.exportAs(id, id);
+        },
+
+        ExportAliasing: ({ identifier, alias }) => {
+          const theId = this.evaluate(identifier, environment, stack);
+          const theAlias = this.evaluate(alias, environment, stack);
+          this.module.exportAs(theAlias, theId);
+        },
+
+        Invoke: ({ callee, input, options }) => {
+          const fn = this.evaluate(callee, environment, [...stack, { ast: callee }]);
+          assertInvokable('Function application', fn);
+
+          return fn.invoke(
+            this,
+            this.evaluate(input, environment, [...stack, { ast: input }]),
+            this.evaluate(options, environment, [...stack, { ast: options }]),
+            stack
+          );
+        },
+
+        Prefix: ({ operator, expression }) => {
+          const fn = this.evaluate(callee, environment, [...stack, { ast: operator }]);
+          assertInvokable('Function application', fn);
+
+          return fn.invoke(
+            this,
+            this.evaluate(expression, environment, [...stack, { ast: expression }]),
+            {},
+            stack
+          );
+        },
+
+        Infix: ({ operator, left, right }) => {
+          const fn = this.evaluate(operator, environment, [...stack, { ast: operator }]);
+          assertInvokable('Function application', fn);
+
+          const fn2 = fn.invoke(
+            this,
+            this.evaluate(left, environment, [...stack, { ast: left }]),
+            {},
+            stack
+          );
+
+          assertInvokable('Function application', fn2);
+          return fn2.invoke(
+            this,
+            this.evaluate(right, environment, [...stack, { ast: right }]),
+            {},
+            stack
+          );
+        },
+
+        Partial: ({ callee, options }) =>
+          new Partial(
+            this.evaluate(callee, environment, [...stack, { ast: callee }]),
+            this.evaluate(options, environment, [...stack, { ast: options }]),
+            ast
+          ),
 
 
-      Pipe: ({ input, transformation }) => {
-        const stream = this.evaluate(input, environment);
-        const fn = this.evaluate(transformation, environment);
-        assertType('Pipe', 'Stream', stream);
-        assertInvokable('Pipe', fn);
+        Pipe: ({ input, transformation }) => {
+          const stream = this.evaluate(input, environment, [...stack, { ast: input }]);
+          const fn = this.evaluate(transformation, environment, [...stack, { ast: transformation }]);
+          assertType('Pipe', 'Stream', stream);
+          assertInvokable('Pipe', fn);
 
-        return stream.chain(
-          (value) => fn.invoke(this, value, {})
-        );
-      },
+          return stream.chain(
+            (value) => fn.invoke(this, value, {}, stack)
+          );
+        },
 
-      Variable: ({ id }) => {
-        const name = this.evaluate(id, environment);
-        const value = environment.get(name);
-        if (value.autoInvoke) {
-          return value.invoke(this);
-        } else {
-          return value;
+        Variable: ({ id }) => {
+          const name = this.evaluate(id, environment, stack);
+          const value = environment.get(name);
+          if (value.autoInvoke) {
+            return value.invoke(this, null, {}, stack);
+          } else {
+            return value;
+          }
+        },
+
+        Let: ({ binding, value, expression }) => {
+          const theBinding = this.evaluate(binding, environment, stack);
+          const newEnv = new Environment(environment);
+          newEnv.define(theBinding, new Thunk(theBinding, environment, value, ''));
+
+          return this.evaluate(expression, newEnv, [...stack, { ast: expression }]);
+        },
+
+        IfThenElse: ({ condition, consequent, alternate }) => {
+          const theCondition = this.evaluate(condition, environment, [...stack, { ast: condition }]);
+          assertType('if _ then _ else', 'Boolean', theCondition);
+
+          if (theCondition) {
+            return this.evaluate(consequent, environment, [...stack, { ast: consequent }]);
+          } else {
+            return this.evaluate(alternate, environment, [...stack, { ast: alternate }]);
+          }
+        },
+
+        Get: ({ expression, property }) => {
+          const theObject = this.evaluate(expression, environment, [...stack, { ast: expression }]);
+          const theProperty = this.evaluate(property, environment, stack);
+          assertType(`_.${theProperty}`, 'Record', theObject);
+
+          if (hasOwnProperty(theObject, theProperty)) {
+            return theObject[theProperty];
+          } else {
+            throw new Error(`No property ${theProperty} in the record.`);
+          }
+        },
+
+        Program: ({ declarations }) => {
+          declarations.forEach(d => this.evaluate(d, environment, [...stack, { ast: d }]));
         }
-      },
-
-      Let: ({ binding, value, expression }) => {
-        const theBinding = this.evaluate(binding, environment);
-        const newEnv = new Environment(environment);
-        newEnv.define(theBinding, new Thunk(theBinding, environment, value, ''));
-
-        return this.evaluate(expression, newEnv);
-      },
-
-      IfThenElse: ({ condition, consequent, alternate }) => {
-        const theCondition = this.evaluate(condition, environment);
-        assertType('if _ then _ else', 'Boolean', theCondition);
-
-        if (theCondition) {
-          return this.evaluate(consequent, environment);
-        } else {
-          return this.evaluate(alternate, environment);
-        }
-      },
-
-      Get: ({ expression, property }) => {
-        const theObject = this.evaluate(expression, environment);
-        const theProperty = this.evaluate(property, environment);
-        assertType(`_.${theProperty}`, 'Record', theObject);
-
-        return theObject[theProperty];
-      },
-
-      Program: ({ declarations }) => {
-        declarations.forEach(d => this.evaluate(d, environment));
+      });
+    } catch (error) {
+      if (error && error.isFuripotaError) {
+        throw error;
+      } else {
+        const name = error ? error.name : 'EvalError';
+        const message = error ? error.message : '';
+        const jsStack = error ? error.stack : '';
+        const theError = furipotaError(name, `Failed to evaluate:
+  ${ast.prettyPrint(2)}
+  
+${message}`, stack, jsStack);
+        throw theError;
       }
-    });
+    }
   }
 
   import(file, kind) {
@@ -410,9 +495,16 @@ class FuripotaVM {
     return new Stream(producer, name);
   }
 
+  tagged(tag, value) {
+    return new Tagged(tag, value);
+  }
+
   nativeModule(name, env, record) {
     const module = new Module(name, env);
-    module.environment.extend(mapValues(record, this.primitive));
+    module.environment.extend(mapValues(record, x => {
+      return typeof x === 'function' ?  this.primitive(x)
+      :      /* otherwise */            x;
+    }));
     Object.keys(record).forEach(k => module.exportAs(k, k));
     return module;
   }
@@ -448,6 +540,9 @@ class FuripotaVM {
   static fromFile(file, moduleCache = null) {
     const module = new Module(file, new Environment(null));
     const vm = new FuripotaVM({ module, moduleCache });
+    module.environment.define('self', {
+      path: Path(vm)['from-text'](vm, file)
+    });
     const ast = parse(readAsText(file));
     vm.evaluate(ast, module.environment);
     return vm;

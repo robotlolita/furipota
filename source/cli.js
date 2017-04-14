@@ -39,7 +39,11 @@ program.command('run <expression>')
       });
       await stream.run();
     } catch (error) {
-      console.error(error.stack);
+      if (error.isFuripotaError) {
+        console.error(error.message);
+      } else {
+        console.error(error.stack);
+      }
       process.exit(1);
     }
   });

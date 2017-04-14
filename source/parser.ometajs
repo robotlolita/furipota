@@ -15,6 +15,8 @@ var reserved = [
   'true', 'false',
   'let', 'in',
   'if', 'then', 'else',
+  'and', 'or', 'not',
+  'default'
 ];
 
 function isValid(id) {
@@ -70,7 +72,7 @@ ometa FuripotaParser {
 
 
   // --[ Values ]
-  value = Boolean | Number | Text | Vector | Record | Lambda,
+  value = Boolean | Number | Text | Vector | Record | Lambda | Tagged,
 
   Boolean = kw('true') -> ast.Boolean(true)
           | kw('false') -> ast.Boolean(false),
@@ -105,11 +107,14 @@ ometa FuripotaParser {
 
   recordPair = Keyword:k ws recordExpression:v -> [k, v],
 
-  recordExpression = primaryExpression
+  recordExpression = simpleExpression
                    | Vector,
 
   Lambda = '|' (ws Identifier)+:as (ws '@' ws Identifier)?:r ws '|' ws expression:e
          -> makeLambda(as.concat([r || ast.Identifier('_')]), e),
+
+  Tagged = '^' Identifier:i ws simpleExpression:e
+           -> ast.Tagged(i, e),
 
 
   // --[ Declarations ]
@@ -145,16 +150,47 @@ ometa FuripotaParser {
              | IfThenElse,
 
   Let = kw('let') ws Identifier:i ws '=' ws expression:v ws kw('in') ws expression:e
-        -> ast.Let(i, v, e),
+        -> ast.Let(i, v, e)
+      | kw('let') ws Identifier:i ws argNames:as ws '=' ws expression:v ws kw('in') ws expression:e
+        -> ast.Let(i, makeLambda(as, v), e),
 
   IfThenElse = kw('if') ws expression:c
                  ws kw('then') ws expression:t
                  ws kw('else') ws expression:e
                -> ast.IfThenElse(c, t, e),
 
-  Pipe = Pipe:a ws seq('|>') ws Invoke:t
+  Pipe = Pipe:a ws seq('|>') ws Logical:t
          -> ast.Pipe(a, t)
-       | Invoke,
+       | Logical,
+
+  Logical = Logical:a ws (kw('and') | kw('or')):o ws Relational:b
+            -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
+          | Relational
+          | Infix,
+
+  Relational = Relational:a ws (seq('===') | seq('=/=') | '>' | seq('>=') | '<' | seq('<=')):o ws Add:b
+               -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
+             | Add,
+  
+  Add = Add:a ws ('+' | '-'):o ws Multiply:b
+        -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
+      | Multiply,
+
+  Multiply = Multiply:a ws ('*' | '/'):o sws Unary:b
+             -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
+           | Unary,
+
+  Infix = Infix:l ws '`' Identifier:i ws Unary:b
+          -> ast.Infix(ast.Variable(i), l, b)
+        | Infix:l sws '`' qualifiedIdentifier:i ws Unary:b
+          -> ast.Infix(i, l, b),
+
+  qualifiedIdentifier = qualifiedIdentifier:a ws '.' ws Identifier:i
+                        -> ast.Get(a, i),
+
+  Unary = kw('not') ws Invoke:e
+          -> ast.Prefix(ast.Identifier('not'), e)
+        | Invoke,
 
   Invoke = Invoke:i ws memberExpression:v ws Record?:r
            -> ast.Invoke(i, v, r || ast.Record([]))
@@ -164,14 +200,15 @@ ometa FuripotaParser {
 
   memberExpression = memberExpression:m ws '.' ws Identifier:i
                      -> ast.Get(m, i)
-                   | primaryExpression,
+                   | simpleExpression,
 
-  primaryExpression = Boolean
-                    | Text
-                    | Number
-                    | Vector
-                    | Identifier:i               -> ast.Variable(i)
-                    | '(' ws expression:a ws ')' -> a,
+  simpleExpression = Boolean
+                   | Text
+                   | Number
+                   | Vector
+                   | Tagged
+                   | Identifier:i               -> ast.Variable(i)
+                   | '(' ws expression:a ws ')' -> a,
 
 
   // --[ Entry points ]

@@ -15,6 +15,7 @@ module.exports = (furipota) => {
   const mkdir = require('mkdirp');
   const rimraf = require('rimraf');
   const { compact } = require('./utils')(furipota);
+  const { 'from-text': intoPath } = require('./path')(furipota);
 
   const { primitive, stream, assertType } = furipota;  
 
@@ -81,7 +82,7 @@ module.exports = (furipota) => {
     return Promise.all(files.map(async (file) => {
       const stats = await statP(path.join(baseDir, file));
       return {
-        path: file,
+        path: intoPath(null, file),
         'created-at': stats.ctime,
         'updated-at': stats.mtime,
         type: fileType(stats)
@@ -102,42 +103,6 @@ module.exports = (furipota) => {
 
 
   return {
-    // Path utilities
-    path: (vm, seq, options) => {
-      assertType('Filesystem.path <path>', 'Vector', seq);
-      return path.resolve(...seq);
-    },
-
-    basename: (vm, x, options) => {
-      assertType('Filesystem.basename <path>', 'Text', x);
-      if ('omit-extension' in options) {
-        assertType('Filesystem.basename _ omit-extension: <X>', 'Boolean', options['omit-extension']);
-        if (options['omit-extension']) {
-          return path.basename(x, path.extname(x));
-        } else {
-          return path.basename(x);
-        }
-      } else {
-        return path.basename(x);
-      }
-    },
-
-    directory: (vm, x, options) => {
-      assertType('Filesystem.directory <path>', 'Text', x);
-      return path.dirname(x);
-    },
-
-    extension: (vm, x, options) => {
-      assertType('Filesystem.extension <path>', 'Text', x);
-      return path.extname(x);
-    },
-
-    relative: (vm, x, options) => {
-      return primitive((vm, y) => {
-        return path.relative(x, y);
-      })
-    },
-
     find: (vm, glob, options) => {
       return furipota.stream(async (producer) => {
         try {
@@ -156,14 +121,14 @@ module.exports = (furipota) => {
     },
 
     'make-directory': (vm, path, options) => {
-      assertType('Filesystem.make-directory <path>', 'Text', path);
+      assertType('Filesystem.make-directory <path>', '^Path', path);
       if ('mode' in options) {
         assertType('Filesystem.make-directory _ mode: <X>', 'Number', options.mode);
       }
 
       return stream(async (producer) => {
         try {
-          const made = await mkdirP(path, compact({ mode: options.mode }));
+          const made = await mkdirP(path.value._fullpath, compact({ mode: options.mode }));
           await producer.pushValue(made);
           await producer.close();
         } catch (error) {
@@ -174,14 +139,11 @@ module.exports = (furipota) => {
     },
 
     'remove': (vm, path, options) => {
-      assertType('Filesystem.remove <path>', 'Text', path);
-      if ('use-glob' in options) {
-        assertType('Filesystem.remove _ use-glob: <X>', 'Boolean', options['use-glob']);
-      }
+      assertType('Filesystem.remove <path>', '^Path', path);
 
       return stream(async (producer) => {
         try {
-          await rmP(path, { disableGlob: !options['use-glob'] });
+          await rmP(path.value._fullpath, { disableGlob: true });
           await producer.close();
         } catch (error) {
           await producer.pushError(error);
@@ -191,15 +153,15 @@ module.exports = (furipota) => {
     },
 
     'copy': (vm, path, options) => {
-      assertType('Filesystem.copy <path>', 'Text', path);
-      assertType('Filesystem.copy _ to: <path>', 'Text', options.to);
+      assertType('Filesystem.copy <path>', '^Path', path);
+      assertType('Filesystem.copy _ to: <path>', '^Path', options.to);
       if ('overwrite' in options) {
         assertType('Filesystem.copy _ overwrite: <X>', 'Boolean', options.overwrite);
       }
     
       return stream(async (producer) => {
         try {
-          await copyP(path, options.to, compact({ overwrite: options.overwrite }));
+          await copyP(path.value._fullpath, options.to.value._fullpath, compact({ overwrite: options.overwrite }));
           await producer.pushValue({ from: path, to: options.to });
           await producer.close();
         } catch (error) {

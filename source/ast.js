@@ -51,6 +51,10 @@ const AST = data('furipota:ast', {
     return { value, options, expression };
   },
 
+  Tagged(tag, value) {
+    return { tag, value };
+  },
+
   // --[ Declarations ]-------------------------------------------------
   Define(id, expression, documentation) {
     return { id, expression, documentation };
@@ -99,6 +103,14 @@ const AST = data('furipota:ast', {
 
   Get(expression, property) {
     return { expression, property };
+  },
+
+  Infix(operator, left, right) {
+    return { operator, left, right };
+  },
+
+  Prefix(operator, expression) {
+    return { operator, expression };
   },
 
   // --[ Entry point ]--------------------------------------------------
@@ -165,6 +177,10 @@ provide(AST, 'prettyPrint', {
     return `|${this.value.prettyPrint(depth)} @${this.options.prettyPrint(depth)}| ${this.expression.prettyPrint(depth)}`
   },
 
+  Tagged(depth) {
+    return `^${this.tag.prettyPrint(depth)} ${p(this.value, depth)}`;
+  },
+
   Define(depth) {
     return 'define ' + this.id.prettyPrint(depth) + ' = \n' + ' '.repeat(depth + 2) + this.expression.prettyPrint(depth + 2);
   },
@@ -212,6 +228,14 @@ provide(AST, 'prettyPrint', {
 
   Get(depth) {
     return p(this.expression, depth) + '.' + this.property.prettyPrint(depth);
+  },
+
+  Infix(depth) {
+    return p(this.left, depth) + ' `' + this.operator.prettyPrint(depth) + ' ' + p(this.right, depth);
+  },
+
+  Prefix(depth) {
+    return this.operator.prettyPrint(depth) + ' ' + p(this.expression, depth);
   },
 
   Program(depth) {

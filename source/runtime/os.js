@@ -8,14 +8,14 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { primitive, assertType, stream, Stream } = furipota;
+  const { tagged, primitive, assertType, stream, Stream } = furipota;
   const { compact } = require('./utils')(furipota);
   const childProcess = require('child_process');
 
   return {
     run(vm, command, _) {
       return primitive((vm, args, options) => {
-        assertType('OS.run <command> _', 'Text', command);
+        assertType('OS.run <command> _', '^Path', command);
         assertType('OS.run _ <args>', 'Vector', args);
         if ('working-directory' in options) {
           assertType('OS.run _ _ working-directory: <X>', 'Text', options['working-directory']);
@@ -37,7 +37,7 @@ module.exports = (furipota) => {
         }
 
         return stream(async (producer) => {
-          const child = childProcess.spawn(command, args, compact({
+          const child = childProcess.spawn(command.value._fullpath, args, compact({
             cwd: options['working-directory'],
             env: options.environment,
             uid: options['user-id'],
@@ -47,7 +47,7 @@ module.exports = (furipota) => {
 
           const die = async (error) => {
             child.kill();
-            await producer.pushError(error);
+            await producer.pushError(tagged('OS-run-error', error));
             await producer.close();
           }
 
@@ -67,7 +67,7 @@ module.exports = (furipota) => {
             try {
               child.stdout.pause();
               child.stderr.pause();
-              await producer.pushError(chunk.toString(encoding));
+              await producer.pushError(tagged('OS-run-stderr', chunk.toString(encoding)));
               child.stdout.resume();
               child.stderr.resume();
             } catch (error) {
@@ -77,13 +77,13 @@ module.exports = (furipota) => {
 
           child.on('close', async (code) => {
             if (code !== 0) {
-              await producer.pushError(`${command} exited with code ${code}`);
+              await producer.pushError(tagged('OS-run-exit-code', code));
             }
             await producer.close();
           });
 
           child.on('error', async (error) => {
-            await producer.pushError(error);
+            await producer.pushError(tagged('OS-run-error', error));
             await producer.close();
           })
         });

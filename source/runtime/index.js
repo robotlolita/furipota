@@ -8,6 +8,7 @@
 //----------------------------------------------------------------------
 
 const extend = require('xtend');
+const { mapValues } = require('folktale/core/object');
 
 
 module.exports = {
@@ -29,19 +30,37 @@ module.exports = {
   text: (vm) =>
     vm.nativeModule('core:text', null, require('./text')(vm)),
 
+  core: (vm) =>
+    vm.nativeModule('core:core', null, require('./core')(vm)),
+
+  number: (vm) =>
+    vm.nativeModule('core:number', null, require('./number')(vm)),
+
   prelude: (vm) => {
+    const { primitive } = vm;
+
     const Debug = require('./debug')(vm);
     const Text = require('./text')(vm);
     const Stream = require('./stream')(vm);
     const Filesystem = require('./filesystem')(vm);
     const OS = require('./os')(vm);
+    const Core = require('./core')(vm);
+    const Number = require('./number')(vm);
+    const Path = require('./path')(vm);
 
     return vm.nativeModule('core:prelude', null, extend(
-      Debug,
-      Text,
-      Stream,
-      Filesystem,
-      OS
+      Debug, Text, Stream, Filesystem, OS, Core, Number,
+      {
+        '/': primitive(Path['/']),
+        Debug: mapValues(Debug, primitive),
+        Text: mapValues(Text, primitive),
+        Stream: mapValues(Stream, primitive),
+        Filesystem: mapValues(Filesystem, primitive),
+        OS: mapValues(OS, primitive),
+        Core: mapValues(Core, primitive),
+        Number: mapValues(Number, primitive),
+        Path: mapValues(Path, primitive)
+      }
     ));
   }
 };
