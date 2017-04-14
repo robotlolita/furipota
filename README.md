@@ -20,9 +20,23 @@ furipota VM instance, i.e.:
 
 ```js
 module.exports = function(furipota) {
-  return { bindings };
+  return furipota.module('plugin:myPlugin', null, {
+    hello(vm, arg, options) {
+      return "hello " + arg;
+    }
+   });
 }
 ```
+
+You can then use it by requiring the plugin:
+
+```ruby
+%furipota/1
+
+import plugin "./my-plugin.js" as Plugin
+
+define hello = Plugin.hello "world"
+``` 
 
 
 ## Licence
