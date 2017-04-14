@@ -20,6 +20,14 @@ function isValid(id) {
   return reserved.indexOf(id) === -1;
 }
 
+function makeLambda(args, expr) {
+  const lastArg = args[args.length - 2];
+  const recordArg = args[args.length - 1];
+  return args.slice(0, -2).reduceRight(function(fn, arg) {
+    return ast.Lambda(arg, ast.Identifier('_'), fn);
+  }, ast.Lambda(lastArg, recordArg, expr));
+}
+
 
 ometa FuripotaParser {
   // --[ Lexical structure ]
@@ -106,8 +114,13 @@ ometa FuripotaParser {
   // --[ Declarations ]
   declaration = Define | Import,
 
-  Define = kw('define') ws Identifier:i ws '=' ws expression:e
-           -> ast.Define(i, e),
+  Define = kw('define') ws Identifier:i ws '=' doc?:d ws expression:e
+           -> ast.Define(i, e, d || '')
+         | kw('define') ws Identifier:i ws argNames:as '=' doc?:d ws expression:e,
+           -> ast.Define(i, makeLambda(as, e), d || ''),
+
+  argNames = Identifier:a (ws Identifier)*:as ws Identifier:r -> [a].concat(as, [r]),
+  doc = (space* comment)*:xs -> xs.join(''),
 
   Import = kw('import') ws Text:p
            -> ast.Import(p),

@@ -4,8 +4,25 @@ result: OK
 rule: Define
 ast:
   !Define
-  id: !Identifier "hello"
+  id: !Identifier hello
   expression:
     !Pipe
     input: !Text "hello"
     transformation: !Variable { id: !Identifier world }
+  documentation: ""
+
+***
+
+define doc =
+  # The doc
+  # goes here
+  # ya
+  expr
+---
+result: OK
+rule: Define
+ast:
+  !Define
+  id: !Identifier doc
+  expression: !Variable { id: !Identifier expr }
+  documentation: " The doc\n goes here\n ya\n"

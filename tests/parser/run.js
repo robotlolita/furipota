@@ -49,7 +49,8 @@ const Record = new yaml.Type('!Record', {
 
 const Define = new yaml.Type('!Define', {
   kind: 'mapping',
-  construct: ({ id, expression }) => ast.Define(id, expression)
+  construct: ({ id, expression, documentation }) =>
+    ast.Define(id, expression, documentation)
 });
 
 const Import = new yaml.Type('!Import', {
@@ -59,7 +60,8 @@ const Import = new yaml.Type('!Import', {
 
 const Invoke = new yaml.Type('!Invoke', {
   kind: 'mapping',
-  construct: ({ callee, input, options }) => ast.Invoke(callee, input, options)
+  construct: ({ callee, input, options }) =>
+    ast.Invoke(callee, input, options)
 });
 
 const Partial = new yaml.Type('!Partial', {

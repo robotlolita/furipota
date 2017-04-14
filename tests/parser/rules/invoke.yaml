@@ -22,3 +22,23 @@ ast:
     !Record
     - [!Keyword opt, !Text b]
     - [!Keyword another, !Text c]
+
+***
+
+f g h "a"
+---
+result: OK
+rule: Invoke
+ast:
+  !Invoke
+  callee:
+    !Invoke
+    callee:
+      !Invoke
+      callee: !Variable { id: !Identifier f }
+      input: !Variable { id: !Identifier g }
+      options: !Record []
+    input: !Variable { id: !Identifier h }
+    options: !Record []
+  input: !Text a
+  options: !Record []

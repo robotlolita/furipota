@@ -48,8 +48,8 @@ const AST = data('furipota:ast', {
   },
 
   // --[ Declarations ]-------------------------------------------------
-  Define(id, expression) {
-    return { id, expression };
+  Define(id, expression, documentation) {
+    return { id, expression, documentation };
   },
 
   Import(path) {

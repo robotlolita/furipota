@@ -15,6 +15,7 @@ ast:
       callee: !Variable { id: !Identifier watch }
       input: !Text "src/*.js"
       options: !Record []
+    documentation: ""
   - !Define
     id: !Identifier compile
     expression:
@@ -26,3 +27,4 @@ ast:
         options:
           !Record
           - [!Keyword output-directory, !Text lib]
+    documentation: ""
