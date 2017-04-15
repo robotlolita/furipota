@@ -12,7 +12,7 @@ module.exports = (furipota) => {
   const { primitive, Stream, assertType } = furipota;
 
   return {
-    'show-value'(_, value, options) {
+    'display'(_, value, options) {
       process.stdout.write(value);
       return Stream.of(value);
     },

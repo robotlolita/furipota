@@ -176,10 +176,10 @@ ometa FuripotaParser {
             -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
           | Infix,
 
-  Infix = Infix:l ws '`' Identifier:i ws Unary:b
-          -> ast.Infix(ast.Variable(i), l, b)
-        | Infix:l ws '`' qualifiedIdentifier:i ws Unary:b
-          -> ast.Infix(i, l, b)
+  Infix = Infix:l ws '`' Identifier:i ws Unary:r
+          -> ast.Infix(ast.Variable(i), l, r)
+        | Infix:l ws '`' qualifiedIdentifier:i ws Unary:r
+          -> ast.Infix(i, l, r)
         | Postfix,
 
   Postfix = Postfix:e ws '|' ws memberExpression:i ws Record?:r

@@ -363,19 +363,19 @@ class FuripotaVM {
 
         Infix: ({ operator, left, right }) => {
           const fn = this.evaluate(operator, environment, [...stack, { ast: operator }]);
-          assertInvokable('Function application', fn);
+          assertInvokable(`_ ${operator.prettyPrint(0)} x`, fn);
 
           const fn2 = fn.invoke(
             this,
-            this.evaluate(left, environment, [...stack, { ast: left }]),
+            this.evaluate(right, environment, [...stack, { ast: right }]),
             {},
             stack
           );
 
-          assertInvokable('Function application', fn2);
+          assertInvokable(`x ${operator.prettyPrint(0)} .`, fn2);
           return fn2.invoke(
             this,
-            this.evaluate(right, environment, [...stack, { ast: right }]),
+            this.evaluate(left, environment, [...stack, { ast: left }]),
             {},
             stack
           );
