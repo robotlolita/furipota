@@ -83,8 +83,8 @@ class Primitive {
     this.computation = fn;
   }
 
-  invoke(vm, stream, record) {
-    return this.computation(vm, stream, record);
+  invoke(vm, stream, record, stack = []) {
+    return this.computation(vm, stream, record, stack);
   }
 }
 
@@ -96,7 +96,7 @@ class Partial {
     this.fullAst = ast;
   }
 
-  invoke(vm, input, _, stack) {
+  invoke(vm, input, _, stack = []) {
     return this.callee.invoke(vm, input, this.options, [...stack, { procedure: '(partial)', ast: this.fullAst }]);
   }
 }
@@ -110,7 +110,7 @@ class Lambda {
     this.fullAst = ast;
   }
 
-  invoke(vm, value, options, stack) {
+  invoke(vm, value, options, stack = []) {
     const env = new Environment(this.environment);
     env.define(this.valueParam, value);
     env.define(this.optionsParam, options);
@@ -195,9 +195,11 @@ class Module {
 
 
 const formatStack = (stack) =>
-  stack.map(({ procedure, ast }) => {
+  stack.map(({ native, procedure, ast }) => {
     if (procedure) {
       return `at ${procedure}: ${ast.prettyPrint(7 + procedure.length)}`;
+    } else if (native) {
+      return `at native ${native}`;
     } else {
       return `in ${ast.prettyPrint(5)}`;
     }

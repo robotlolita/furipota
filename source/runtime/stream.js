@@ -19,30 +19,37 @@ module.exports = (furipota) => {
     },
 
     map: (vm, fn, options) => {
-      assertInvokable('Stream.map', fn);
-      return stream.map((value) => {
-        return fn.invoke(vm, value, Object.create(null));
+      return primitive((_, stream, options, stack) => {
+        assertInvokable('Stream.map x _', fn);
+        assertType('Stream.map _ x', 'Stream', stream);
+        return stream.map((value) => {
+          return fn.invoke(vm, value, {}, [...stack, { native: 'Stream.map' }]);
+        });
       });
     },
 
     filter: (vm, fn, options) => {
-      assertInvokable('Stream.filter', fn);
-      return stream.chain((value) => {
-        const keep = fn.invoke(vm, value, Object.create(null));
-        assertType('Stream.filter’s return', 'Boolean', keep);
-        if (keep) {
-          return Stream.of(value);
-        } else {
-          return Stream.empty();
-        }
+      return primitive((_, stream, __, stack) => {
+        assertInvokable('Stream.filter x _', fn);
+        assertType('Stream.filter _ x', 'Stream', stream);
+
+        return stream.chain((value) => {
+          const keep = fn.invoke(vm, value, Object.create(null), [...stack, { native: 'Stream.filter' }]);
+          assertType('Stream.filter’s return', 'Boolean', keep);
+          if (keep) {
+            return Stream.of(value);
+          } else {
+            return Stream.empty();
+          }
+        })
       });
     },
 
     tap: (vm, fn, options) => {
-      assertInvokable('Stream.tap', fn);
-      return primitive((vm, value, _) => {
+      return primitive((vm, value, _, stack) => {
+        assertInvokable('Stream.tap x _', fn);
         return stream((producer) => {
-          fn.invoke(vm, value, Object.create(null));
+          fn.invoke(vm, value, Object.create(null), [...stack, { native: 'Stream.tap' }]);
           producer.pushValue(value);
         });
       });
