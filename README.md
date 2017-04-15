@@ -28,7 +28,11 @@ Create a `build.frp` file:
       from-vector ["Hello", ", ", "world"]
         |> display
 
-Run the build pipeline:
+You can check which bindings are exported with `list`:
+
+    furipota list
+
+Finally, you can run the build pipeline passing a furipota expression to `run`:
 
     furipota run hello-world
 
