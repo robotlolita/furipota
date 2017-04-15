@@ -112,8 +112,9 @@ ometa FuripotaParser {
 
   recordPair = Keyword:k ws recordExpression:v -> [k, v],
 
-  recordExpression = simpleExpression
-                   | Vector,
+  recordExpression = memberExpression
+                   | Vector
+                   | Shell,
 
   Lambda = (ws Identifier)+:as (ws '@' ws Identifier)?:r ws seq('->') ws expression:e
          -> makeLambda(as.concat([r || ast.Identifier('_')]), e),

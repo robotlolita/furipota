@@ -11,10 +11,10 @@ module.exports = (furipota) => {
   const { primitive, assertType } = furipota;
 
   return {
-    join(_, vector, __) {
-      return primitive((_, separator, __) => {
-        assertType('Vector.join vector _', 'Vector', vector);
-        assertType('Vector.join _ separator', 'Text', separator);
+    join(_, separator, __) {
+      return primitive((_, vector, __) => {
+        assertType('Vector.join _ vector', 'Vector', vector);
+        assertType('Vector.join separator _', 'Text', separator);
         return vector.join(separator);
       });
     }
