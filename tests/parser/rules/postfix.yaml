@@ -1,0 +1,19 @@
+f a | b yo: "true" | c
+---
+result: OK
+rule: Postfix
+ast:
+  !Invoke
+  callee: !Variable { id: !Identifier c }
+  input:
+    !Invoke
+    callee: !Variable { id: !Identifier b }
+    input:
+      !Invoke
+      callee: !Variable { id: !Identifier f }
+      input: !Variable { id: !Identifier a }
+      options: !Record []
+    options:
+      !Record
+      - [!Keyword yo, !Text "true"]
+  options: !Record []

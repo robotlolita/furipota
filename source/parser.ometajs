@@ -174,8 +174,8 @@ ometa FuripotaParser {
 
   Logical = Logical:a ws (kw('and') | kw('or')):o ws Relational:b
             -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
-          | Relational
-          | Infix,
+          | Infix
+          | Relational,
 
   Relational = Relational:a ws (seq('===') | seq('=/=') | '>' | seq('>=') | '<' | seq('<=')):o ws Add:b
                -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
@@ -199,6 +199,7 @@ ometa FuripotaParser {
             -> ast.Invoke(i, e, r || ast.Record([]))
           | Postfix:e ws '|' ws memberExpression:i ws '_' ws Record?:r
             -> ast.Partial(i, r || ast.Record([]))
+          | Unary,
 
   qualifiedIdentifier = qualifiedIdentifier:a ws '.' ws symbol:i
                         -> ast.Get(a, ast.Identifier(i)),
