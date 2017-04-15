@@ -1,42 +1,38 @@
 # furipota
 
 > **NOTE**  
-> This project is in super early stages of development and should not be used in production.
+> This is a highly experimental project and if you use it in
+> production **kittens will turn into people**.
+> No-one would ever want that to happen, right?
 
 furipota (short for "Deep Fried Potatoes" or "(discrete) Functional Reactive
 Programming Tasks") is a discrete FRP DSL for describing better build pipelines.
 You define a closed system of discrete input streams and their transformations,
 and the VM takes care of running everything for you.
 
-Because the system is described as a sereies of discrete streams, things like
-"watching a file for changes" are naturally supported, whereas one-off tasks are
-just a stream with a single item. This also allows the whole system to run as a
-daemon, reducing the overhead of starting new processes.
 
-The system is implemented on top of Node, with JavaScript as an extension
-language. Of course, any language that compiles to JavaScript can be used, the
-only requirement is for the entrypoint to be a module parameterised over a
-furipota VM instance, i.e.:
+## Getting started
 
-```js
-module.exports = function(furipota) {
-  return furipota.module('plugin:myPlugin', null, {
-    hello(vm, arg, options) {
-      return "hello " + arg;
-    }
-   });
-}
-```
+Install it with npm:
 
-You can then use it by requiring the plugin:
+    $ npm install -g origamitower/furipota
 
-```ruby
-%furipota/1
+Create a `build.frp` file:
 
-import plugin "./my-plugin.js" as Plugin
+    %furipota/1
 
-define hello = Plugin.hello "world"
-``` 
+    import core "prelude"
+
+    export define hello-world =
+      # Says "Hello, world"
+      from-vector ["Hello", ", ", "world"]
+        |> display
+
+Run the build pipeline:
+
+    furipota run hello-world
+
+Check the `examples/` folder and the `docs/` folder for more stuff.
 
 
 ## Licence
