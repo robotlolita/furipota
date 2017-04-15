@@ -9,7 +9,7 @@
 
 module.exports = (furipota) => {
   const chalk = require('chalk');
-  const { Stream, assertType } = furipota;
+  const { primitive, Stream, assertType } = furipota;
 
   return {
     'show-value'(_, value, options) {
@@ -24,7 +24,7 @@ module.exports = (furipota) => {
 
     show(_, stream, options) {
       assertType('Debug.show', 'Stream', stream);
-      Stream.subscribe({
+      stream.subscribe({
         Value: (x) => process.stdout.write(x),
         Error: (x) => process.stderr.write(x),
         Close: () => {}
