@@ -26,7 +26,7 @@ class Stream {
       }
 
       this.subscribe({
-        Value(x) {
+        async Value(x) {
           const stream = transformation(x);
           stream.subscribe({
             Value: producer.pushValue,
@@ -34,7 +34,7 @@ class Stream {
             Close: maybeClose(stream)
           });
           pending.push(stream);
-          stream.run();
+          await stream.run();
         },
 
         Error: producer.pushError,
