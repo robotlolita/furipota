@@ -36,6 +36,9 @@ module.exports = {
   number: (vm) =>
     vm.nativeModule('core:number', null, require('./number')(vm)),
 
+  terminal: (vm) =>
+    vm.nativeModule('core:terminal', null, require('./terminal')(vm)),
+
   prelude: (vm) => {
     const { primitive } = vm;
 
@@ -47,9 +50,10 @@ module.exports = {
     const Core = require('./core')(vm);
     const Number = require('./number')(vm);
     const Path = require('./path')(vm);
+    const Terminal = require('./terminal')(vm);
 
     return vm.nativeModule('core:prelude', null, extend(
-      Debug, Text, Stream, Filesystem, OS, Core, Number,
+      Debug, Text, Stream, Filesystem, OS, Core, Number, Terminal,
       {
         '/': primitive(Path['/']),
         'path': Path['from-text'],

@@ -11,7 +11,6 @@ define npm-bin name =
 define ometa path @options =
   $((npm-bin "ometajs2js") '--input path '--output options.output)
 
-
 # -- [ Tasks ]
 export 
 define build =
@@ -19,11 +18,11 @@ define build =
   let build-dir = path "furipota-test" in
   let target dest = build-dir / Path.relative (path "source") to: dest in
   sequential [
-    trace "MKDIR" (make-directory build-dir),
+    make-directory build-dir | trace prefix: "MKDIR",
     parallel [
       js-sources
-        |> (|x| trace "COPY" (copy x.path to: (target x.path))),
+        |> (x -> copy x.path to: (target x.path) | trace prefix: "COPY"),
       ometa-sources
-        |> (|x| trace "OMETA" (ometa x.path output: (Path.change-extension ".js" (target x.path))))
+        |> (x -> ometa x.path output: (Path.change-extension ".js" (target x.path)) | show)
     ]
   ]

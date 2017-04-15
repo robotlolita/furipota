@@ -21,34 +21,34 @@ module.exports = (furipota) => {
   const close = (x) => chalk.grey(x);
 
   return {
-    trace: (vm, tag) => {
-      return primitive((vm, stream, options) => { 
-        const NONE = {};
-        const show = (kind, data) => {
-          const date = options['date-format'] ? [date(moment().format(date-format))]
-          :            /* else */               [];
+    trace: (vm, stream, options) => { 
+      const NONE = {};
+      const show = (kind, data) => {
+        const tag  = options['prefix'] || '[TRACE]';
+        
+        const date = options['date-format'] ? [date(moment().format(date-format))]
+        :            /* else */               [];
 
-          const inspectOptions = [
-            options['show-hidden-properties'],
-            options['depth'] == null ? 3 : options['depth'],
-            options['color'] == null ? true : options['color']
-          ];
+        const inspectOptions = [
+          options['show-hidden-properties'],
+          options['depth'] == null ? 3 : options['depth'],
+          options['color'] == null ? true : options['color']
+        ];
 
-          const value = data !== NONE ?  [inspect(data, ...inspectOptions)]
-          :             /* else */       [];
+        const value = data !== NONE ?  [inspect(data, ...inspectOptions)]
+        :             /* else */       [];
 
-          let line = [prefix(tag), kind, ...date, ...value];
-          console.error(line.join(' '));
-        }
+        let line = [prefix(tag), kind, ...date, ...value];
+        console.error(line.join(' '));
+      }
 
-        stream.subscribe({
-          Value: (val) => show(ok ('OK   '), val),
-          Error: (val) => show(err('ERROR'), val),
-          Close: () =>    show(close('CLOSE'), NONE)
-        });
-
-        return stream;
+      stream.subscribe({
+        Value: (val) => show(ok ('OK   '), val),
+        Error: (val) => show(err('ERROR'), val),
+        Close: () =>    show(close('CLOSE'), NONE)
       });
+
+      return stream;
     },
 
     log: (vm, value, options) => {

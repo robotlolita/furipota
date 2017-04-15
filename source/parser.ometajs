@@ -115,7 +115,7 @@ ometa FuripotaParser {
   recordExpression = simpleExpression
                    | Vector,
 
-  Lambda = '|' (ws Identifier)+:as (ws '@' ws Identifier)?:r ws '|' ws expression:e
+  Lambda = (ws Identifier)+:as (ws '@' ws Identifier)?:r ws seq('->') ws expression:e
          -> makeLambda(as.concat([r || ast.Identifier('_')]), e),
 
   Tagged = '^' Identifier:i ws simpleExpression:e
@@ -150,11 +150,11 @@ ometa FuripotaParser {
            -> ast.Export(i),
 
   // --[ Expressions ]
-  expression = Pipe
-             | Lambda
+  expression = Lambda
              | Record
              | Let
-             | IfThenElse,
+             | IfThenElse
+             | Pipe,
 
   Let = kw('let') ws Identifier:i ws '=' ws expression:v ws kw('in') ws expression:e
         -> ast.Let(i, v, e)
@@ -191,8 +191,14 @@ ometa FuripotaParser {
 
   Infix = Infix:l ws '`' Identifier:i ws Unary:b
           -> ast.Infix(ast.Variable(i), l, b)
-        | Infix:l sws '`' qualifiedIdentifier:i ws Unary:b
-          -> ast.Infix(i, l, b),
+        | Infix:l ws '`' qualifiedIdentifier:i ws Unary:b
+          -> ast.Infix(i, l, b)
+        | Postfix,
+
+  Postfix = Postfix:e ws '|' ws memberExpression:i ws Record?:r
+            -> ast.Invoke(i, e, r || ast.Record([]))
+          | Postfix:e ws '|' ws memberExpression:i ws '_' ws Record?:r
+            -> ast.Partial(i, r || ast.Record([]))
 
   qualifiedIdentifier = qualifiedIdentifier:a ws '.' ws symbol:i
                         -> ast.Get(a, ast.Identifier(i)),
