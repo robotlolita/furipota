@@ -52,6 +52,7 @@ module.exports = {
       Debug, Text, Stream, Filesystem, OS, Core, Number,
       {
         '/': primitive(Path['/']),
+        'path': Path['from-text'],
         Debug: mapValues(Debug, primitive),
         Text: mapValues(Text, primitive),
         Stream: mapValues(Stream, primitive),

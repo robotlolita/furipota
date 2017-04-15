@@ -17,6 +17,7 @@ const Parser = require('./parser').FuripotaParser;
 const Stream = require('./stream');
 const runtime = require('./runtime');
 const Path = require('./runtime/path');
+const OS = require('./runtime/os');
 
 const hasOwnProperty = (x, p) => Object.prototype.hasOwnProperty.call(x, p);
 
@@ -31,6 +32,10 @@ function parse(source) {
 
 function last(xs) {
   return xs[xs.length - 1];
+}
+
+function flatten(xss) {
+  return xss.reduce((a, b) => a.concat(b), []);
 }
 
 function getType(x) {
@@ -219,7 +224,7 @@ class Environment {
   }
 
   get(name) {
-    if (name in this.bindings) {
+    if (this.bindings[name] != null) {
       return this.bindings[name];
     } else {
       throw new ReferenceError(`No binding defined for ${name}`);
@@ -408,7 +413,7 @@ class FuripotaVM {
         Let: ({ binding, value, expression }) => {
           const theBinding = this.evaluate(binding, environment, stack);
           const newEnv = new Environment(environment);
-          newEnv.define(theBinding, new Thunk(theBinding, environment, value, ''));
+          newEnv.define(theBinding, new Thunk(theBinding, environment, value, '', ast));
 
           return this.evaluate(expression, newEnv, [...stack, { ast: expression }]);
         },
@@ -434,6 +439,29 @@ class FuripotaVM {
           } else {
             throw new Error(`No property ${theProperty} in the record.`);
           }
+        },
+
+        Shell: ({ command, args, options }) => {
+          let [theCommand] = this.evaluate(command, environment, [...stack, { ast: command }]);
+          const theArgs = args.map(x => this.evaluate(x, environment, [...stack, { ast: x }]));
+          if (AST.ShellSymbol.hasInstance(command)) {
+            theCommand = Path(this)['from-text'](null, theCommand);
+          }
+          assertType(`$(command ...)`, '^Path', theCommand);
+
+          return OS(this).run(null, theCommand, {}).invoke(null, flatten(theArgs), options);
+        },
+
+        ShellSymbol: ({ symbol }) => {
+          return [symbol];
+        },
+
+        ShellSpread: ({ items }) => {
+          return this.evaluate(items, environment, stack);
+        },
+
+        ShellExpression: ({ expression }) => {
+          return [this.evaluate(expression, environment, stack)];
         },
 
         Program: ({ declarations }) => {

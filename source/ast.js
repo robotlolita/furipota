@@ -113,6 +113,22 @@ const AST = data('furipota:ast', {
     return { operator, expression };
   },
 
+  Shell(command, args, options) {
+    return { command, args, options }
+  },
+
+  ShellSymbol(symbol) {
+    return { symbol };
+  },
+
+  ShellSpread(items) {
+    return { items };
+  },
+
+  ShellExpression(expression) {
+    return { expression };
+  },
+
   // --[ Entry point ]--------------------------------------------------
   Program(declarations) {
     return { declarations };
@@ -127,7 +143,10 @@ const provide = (union, method, pattern) =>
   Object.keys(pattern).forEach(k => union[k].prototype[method] = pattern[k]);
 
 const needsParenthesis = (ast) =>
-  ![AST.Identifier, AST.Keyword, AST.Text, AST.Integer, AST.Decimal, AST.Boolean, AST.Record, AST.Vector, AST.Variable].some(
+  ![
+    AST.Identifier, AST.Keyword, AST.Text, AST.Integer, AST.Decimal, 
+    AST.Boolean, AST.Record, AST.Vector, AST.Variable, AST.Shell
+  ].some(
     x => x.hasInstance(ast)
   );
 
@@ -236,6 +255,22 @@ provide(AST, 'prettyPrint', {
 
   Prefix(depth) {
     return this.operator.prettyPrint(depth) + ' ' + p(this.expression, depth);
+  },
+
+  Shell(depth) {
+    return `\$(${this.command.prettyPrint(depth)} ${this.args.map(x => x.prettyPrint(depth)).join(' ')} @ ${this.options.prettyPrint(depth)})`;
+  },
+
+  ShellSymbol(depth) {
+    return this.symbol;
+  },
+
+  ShellSpread(depth) {
+    return this.items.prettyPrint(depth);
+  },
+
+  ShellExpression(depth) {
+    return p(this.expression, depth);
   },
 
   Program(depth) {

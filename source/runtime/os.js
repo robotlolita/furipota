@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { tagged, primitive, assertType, stream, Stream } = furipota;
+  const { tagged, primitive, assertType, stream, Stream, getType } = furipota;
   const { compact } = require('./utils')(furipota);
   const childProcess = require('child_process');
 
@@ -18,7 +18,7 @@ module.exports = (furipota) => {
         assertType('OS.run <command> _', '^Path', command);
         assertType('OS.run _ <args>', 'Vector', args);
         if ('working-directory' in options) {
-          assertType('OS.run _ _ working-directory: <X>', 'Text', options['working-directory']);
+          assertType('OS.run _ _ working-directory: <X>', '^Path', options['working-directory']);
         }
         if ('environment' in options) {
           assertType('OS.run _ _ environment: <X>', 'Record', options.environment);
@@ -36,9 +36,17 @@ module.exports = (furipota) => {
           assertType('OS.run _ _ encoding: <X>', 'Text', options.encoding);
         }
 
+        const theArgs = args.map(x => {
+          if (getType(x) === '^Path') {
+            return x.value._fullpath;
+          } else {
+            return x;
+          }
+        });
+
         return stream(async (producer) => {
-          const child = childProcess.spawn(command.value._fullpath, args, compact({
-            cwd: options['working-directory'],
+          const child = childProcess.spawn(command.value._fullpath, theArgs, compact({
+            cwd: options['working-directory'] ? options['working-directory'].value._fullpath : null,
             env: options.environment,
             uid: options['user-id'],
             gid: options['group-id']

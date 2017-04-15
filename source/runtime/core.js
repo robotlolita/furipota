@@ -51,6 +51,14 @@ module.exports = (furipota) => {
       return primitive((_, b) => {
         return a !== b;
       });
+    },
+
+    'do'(_, exprs) {
+      assertType('do expressions', 'Vector', exprs);
+      if (exprs.length === 0) {
+        throw new Error(`(do expressions) invoked with an empty sequence of expressions`);
+      }
+      return exprs[exprs.length - 1];
     }
   }
 };

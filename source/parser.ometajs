@@ -70,6 +70,11 @@ ometa FuripotaParser {
   Keyword = <idStart idRest*>:a ':'
             -> ast.Keyword(a),
 
+  symbol = <(letter | digit | infix)+>,
+
+  infix = (seq('===') | seq('=/=') | '>' | seq('>=') | seq('<=') | '+' | '-' | '*' | '/'):a
+          -> ast.Identifier(a),
+
 
   // --[ Values ]
   value = Boolean | Number | Text | Vector | Record | Lambda | Tagged,
@@ -124,6 +129,8 @@ ometa FuripotaParser {
            -> ast.Define(i, e, d || '')
          | kw('define') ws Identifier:i ws argNames:as ws '=' doc?:d ws expression:e
            -> ast.Define(i, makeLambda(as, e), d || ''),
+         | kw('define') ws Identifier:l ws infix:op ws Identifier:r (ws '@' Identifier)?:o ws '=' doc?:d ws expression:e
+           -> ast.Define(op, makeLambda([l, r, o || ast.Identifier('_')], e), d || ''),
 
   argNames = (ws Identifier)+:as (ws '@' Identifier)?:r -> as.concat([r || ast.Identifier('_')]),
   doc = (space* comment)*:xs -> xs.join(''),
@@ -153,6 +160,8 @@ ometa FuripotaParser {
         -> ast.Let(i, v, e)
       | kw('let') ws Identifier:i ws argNames:as ws '=' ws expression:v ws kw('in') ws expression:e
         -> ast.Let(i, makeLambda(as, v), e),
+      | kw('let') ws Identifier:l ws infix:op ws Identifier:r (ws '@' Identifier)?:o ws '=' ws expression:v ws kw('in') ws expression:e
+        -> ast.Let(op, makeLambda([l, r, o || ast.Identifier('_')], v), e),
 
   IfThenElse = kw('if') ws expression:c
                  ws kw('then') ws expression:t
@@ -185,8 +194,8 @@ ometa FuripotaParser {
         | Infix:l sws '`' qualifiedIdentifier:i ws Unary:b
           -> ast.Infix(i, l, b),
 
-  qualifiedIdentifier = qualifiedIdentifier:a ws '.' ws Identifier:i
-                        -> ast.Get(a, i),
+  qualifiedIdentifier = qualifiedIdentifier:a ws '.' ws symbol:i
+                        -> ast.Get(a, ast.Identifier(i)),
 
   Unary = kw('not') ws Invoke:e
           -> ast.Prefix(ast.Identifier('not'), e)
@@ -202,11 +211,21 @@ ometa FuripotaParser {
                      -> ast.Get(m, i)
                    | simpleExpression,
 
+  Shell = seq('$(') shellBaseArg:cmd (ws shellArg)*:args (ws '@' ws Record)?:r ws ')'
+          -> ast.Shell(cmd, args, r || ast.Record([])),
+
+  shellBaseArg = '\'' symbol:s       -> ast.ShellSymbol(s)
+               | memberExpression:e  -> ast.ShellExpression(e),
+
+  shellArg = shellBaseArg
+           | seq('...') memberExpression:e -> ast.ShellSpread(e),
+
   simpleExpression = Boolean
                    | Text
                    | Number
                    | Vector
                    | Tagged
+                   | Shell
                    | Identifier:i               -> ast.Variable(i)
                    | '(' ws expression:a ws ')' -> a,
 

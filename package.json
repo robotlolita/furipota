@@ -7,6 +7,8 @@
     "furipota": "./bin/furipota"
   },
   "scripts": {
+    "a": "echo \"yo\"",
+    "b": "echo \"lo\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

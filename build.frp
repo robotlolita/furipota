@@ -9,15 +9,15 @@ define npm-bin name =
   Path.directory self.path / "node_modules" / ".bin" / name
 
 define ometa path @options =
-  run (npm-bin "ometajs2js") ["--input", Path.to-text path, "--output", Path.to-text options.output]
+  $((npm-bin "ometajs2js") '--input path '--output options.output)
 
 
 # -- [ Tasks ]
 export 
 define build =
   # Compiles the Furipota VM.
-  let build-dir = Path.from-text "furipota-test" in
-  let target dest = build-dir / Path.relative (Path.from-text "source") to: dest in
+  let build-dir = path "furipota-test" in
+  let target dest = build-dir / Path.relative (path "source") to: dest in
   sequential [
     trace "MKDIR" (make-directory build-dir),
     parallel [
