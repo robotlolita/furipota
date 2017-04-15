@@ -34,6 +34,12 @@ module.exports = (furipota) => {
       return path.value._fullpath;
     },
 
+    'is-root'(_, p) {
+      assertType('Path.is-root path', '^Path', p);
+      const data = path.parse(fromPath(p));
+      return data.root === data.dir;
+    },
+
     join(_, paths) {
       assertType('Path.join paths', 'Vector', paths);
       const newPath = path.join(...paths.map(fromPath));

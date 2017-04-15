@@ -68,7 +68,8 @@ module.exports = {
         OS: mapValues(OS, primitive),
         Core: mapValues(Core, primitive),
         Number: mapValues(Number, primitive),
-        Path: mapValues(Path, primitive)
+        Path: mapValues(Path, primitive),
+        Vector: mapValues(Vector, primitive)
       }
     ));
   }

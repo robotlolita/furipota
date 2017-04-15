@@ -68,9 +68,10 @@ module.exports = (furipota) => {
 
 
   const globFuripota = async (pattern, options) => {
-    const baseDir = options['base-directory'] || process.cwd();
+    const baseDir = options['base-directory'] ? options['base-directory'].value._fullpath
+                  : /* else */                  process.cwd();
     const files = await globP(pattern, compact({
-      cwd: options['base-directory'],
+      cwd: baseDir,
       silent: options['silent'],
       strict: options['strict'],
       nodir: !options['match-directories'],
@@ -80,7 +81,7 @@ module.exports = (furipota) => {
     }));
 
     return Promise.all(files.map(async (file) => {
-      const stats = await statP(path.join(baseDir, file));
+      const stats = await statP(path.resolve(baseDir, file));
       return {
         path: intoPath(null, file),
         'created-at': stats.ctime,
@@ -104,9 +105,10 @@ module.exports = (furipota) => {
 
   return {
     find: (vm, glob, options) => {
+      assertType('Filesystem.find pattern', '^Path', glob);
       return furipota.stream(async (producer) => {
         try {
-          const files = await globFuripota(glob, options);
+          const files = await globFuripota(glob.value._fullpath, options);
 
           for (const file of files) {
             await producer.pushValue(file);

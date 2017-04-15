@@ -16,7 +16,7 @@ class Stream {
   }
 
   chain(transformation) {
-    return new Stream((producer) => {
+    return new Stream(async (producer) => {
       let pending = [];
       const maybeClose = (x) => async () => {
         pending = pending.filter(a => a !== x);
@@ -42,7 +42,7 @@ class Stream {
       });
 
       pending.push(this);
-      this.run();
+      await this.run();
     }, this.name + ' chain');
   }
 
@@ -101,17 +101,22 @@ class Stream {
         }
       };
 
+      const die = (error) => {
+        closed = true;
+        reject(error);
+      };
+
       const operations = {
         async pushValue(value) {
-          await broadcast('Value', [value]);
+          await broadcast('Value', [value]).catch(die);
         },
 
         async pushError(error) {
-          await broadcast('Error', [error]);
+          await broadcast('Error', [error]).catch(die);
         },
 
         async close() {
-          await broadcast('Close', []);
+          await broadcast('Close', []).catch(die);
           closed = true;
           resolve();
         }

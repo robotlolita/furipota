@@ -60,7 +60,7 @@ module.exports = (furipota) => {
       return stream(async (producer) => {
         let pending = streams.slice();
 
-        streams.forEach(x => {
+        await Promise.all(streams.map(async x => {
           x.subscribe({
             Error: producer.pushError,
             Value: producer.pushValue,
@@ -71,8 +71,8 @@ module.exports = (furipota) => {
               }
             }
           });
-          x.run();
-        });
+          await x.run();
+        }));
       }, 'parallel');
     },
 
@@ -93,11 +93,44 @@ module.exports = (furipota) => {
               },
               Close: runNext
             });
-            x.run();
+            await x.run();
           }
         };
-        runNext();
+        await runNext();
       }, 'sequential');
+    },
+
+    take(_, n, __) {
+      return primitive((_, s, __) => {
+        assertType('Stream.take n _', 'Number', n);
+        assertType('Stream.take _ stream', 'Stream', s);
+        
+        return stream(async (producer) => {
+          let pending = n;
+          s.subscribe({
+            Value: async (x) => {
+              if (pending > 0) {
+                pending -= 1;
+                await producer.pushValue(x);
+                if (!pending) await producer.close();
+              }
+            },
+
+            Error: async (x) => {
+              if (pending > 0) {
+                pending -= 1;
+                await producer.pushError(x);
+                if (!pending) await producere.close();
+              }
+            },
+
+            Close: async () => {
+              await producer.close();
+            }
+          });
+          await s.run();
+        });
+      });
     }
   }
 };

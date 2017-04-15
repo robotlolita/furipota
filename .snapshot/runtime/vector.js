@@ -17,6 +17,14 @@ module.exports = (furipota) => {
         assertType('Vector.join separator _', 'Text', separator);
         return vector.join(separator);
       });
+    },
+
+    concat(_, a, __) {
+      return primitive((_, b, __) => {
+        assertType('Vector.concat a _', 'Vector', a);
+        assertType('Vector.concat _ b', 'Vector', b);
+        return a.concat(b);
+      });
     }
   }
 };

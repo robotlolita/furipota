@@ -3,20 +3,32 @@
 import core "prelude"
 
 # --[ Constants and stuff ]--------------------------------------------
-define js-sources    = find "source/**/*.js"
-define ometa-sources = find "source/**/*.ometajs"
+define js-sources    = find (path "source/**/*.js")
+define ometa-sources = find (path "source/**/*.ometajs")
+define project-root  = Path.directory self.path
 
-define npm-bin name =
-  Path.directory self.path / "node_modules" / ".bin" / name
+define npm-bin name = take 1 (find-upwards project-root (path "node_modules/.bin" / name))
 
 
 # --[ Helpers ]--------------------------------------------------------
 define to-js x = Path.change-extension ".js" x
 
-define ometa path @options = sequential [
-  $((npm-bin "ometajs2js") '--input path '--output options.output),
-  from-vector [from: path to: options.output]
-]
+define ometa path @options =
+  npm-bin "ometajs2js"
+    |> (ometajs -> sequential [
+         $(ometajs.path '--input path '--output options.output),
+         from-vector [from: path to: options.output]
+       ])
+
+define parents path =
+  if Path.is-root path then
+    [path]
+  else
+    Vector.concat [path] (parents (Path.directory path))
+
+define find-upwards from pattern =
+  from-vector (parents from)
+    |> (base -> find pattern base-directory: base return-absolute-paths: true)
 
 define build-to build-dir =
   let    target dest = build-dir / Path.relative (path "source") to: dest
@@ -57,5 +69,5 @@ export define test =
     ]),
     $('node test.path) | show
   ]
-  in find "tests/**/run.js"
+  in find (path "tests/**/run.js")
      |> run _
