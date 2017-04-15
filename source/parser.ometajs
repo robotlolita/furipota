@@ -174,8 +174,22 @@ ometa FuripotaParser {
 
   Logical = Logical:a ws (kw('and') | kw('or')):o ws Relational:b
             -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
-          | Infix
+          | Infix,
+
+  Infix = Infix:l ws '`' Identifier:i ws Unary:b
+          -> ast.Infix(ast.Variable(i), l, b)
+        | Infix:l ws '`' qualifiedIdentifier:i ws Unary:b
+          -> ast.Infix(i, l, b)
+        | Postfix,
+
+  Postfix = Postfix:e ws '|' ws memberExpression:i ws Record?:r
+            -> ast.Invoke(i, e, r || ast.Record([]))
+          | Postfix:e ws '|' ws memberExpression:i ws '_' ws Record?:r
+            -> ast.Partial(i, r || ast.Record([]))
           | Relational,
+
+  qualifiedIdentifier = qualifiedIdentifier:a ws '.' ws symbol:i
+                        -> ast.Get(a, ast.Identifier(i)),
 
   Relational = Relational:a ws (seq('===') | seq('=/=') | '>' | seq('>=') | '<' | seq('<=')):o ws Add:b
                -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
@@ -188,21 +202,6 @@ ometa FuripotaParser {
   Multiply = Multiply:a ws ('*' | '/'):o sws Unary:b
              -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
            | Unary,
-
-  Infix = Infix:l ws '`' Identifier:i ws Unary:b
-          -> ast.Infix(ast.Variable(i), l, b)
-        | Infix:l ws '`' qualifiedIdentifier:i ws Unary:b
-          -> ast.Infix(i, l, b)
-        | Postfix,
-
-  Postfix = Postfix:e ws '|' ws memberExpression:i ws Record?:r
-            -> ast.Invoke(i, e, r || ast.Record([]))
-          | Postfix:e ws '|' ws memberExpression:i ws '_' ws Record?:r
-            -> ast.Partial(i, r || ast.Record([]))
-          | Unary,
-
-  qualifiedIdentifier = qualifiedIdentifier:a ws '.' ws symbol:i
-                        -> ast.Get(a, ast.Identifier(i)),
 
   Unary = kw('not') ws Invoke:e
           -> ast.Prefix(ast.Identifier('not'), e)
