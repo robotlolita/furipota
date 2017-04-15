@@ -50,5 +50,12 @@ export define build =
 
 export define test =
   # Runs the tests for Furipota VM
-  find "tests/**/run.js"
-  |> (test -> $('node test.path) | show)
+  let run test = do [
+    display-line (join " " [
+      Terminal.blue "TEST",
+      Terminal.green (Path.to-text (Path.directory test.path))
+    ]),
+    $('node test.path) | show
+  ]
+  in find "tests/**/run.js"
+     |> run _
