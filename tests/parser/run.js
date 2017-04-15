@@ -6,8 +6,8 @@ const chalk = require('chalk');
 const Result = require('folktale/data/result');
 const diff = require('deep-diff').diff;
 
-const ast = require('../../furipota/ast');
-const Parser = require('../../furipota/parser').FuripotaParser;
+const ast = require('../../furipota/vm/ast');
+const Parser = require('../../furipota/vm/parser').FuripotaParser;
 
 // --[ Schema definition for YAML ]-------------------------------------
 const Identifier = new yaml.Type('!Identifier', {

@@ -145,7 +145,8 @@ const provide = (union, method, pattern) =>
 const needsParenthesis = (ast) =>
   ![
     AST.Identifier, AST.Keyword, AST.Text, AST.Integer, AST.Decimal, 
-    AST.Boolean, AST.Record, AST.Vector, AST.Variable, AST.Shell
+    AST.Boolean, AST.Record, AST.Vector, AST.Variable, AST.Shell,
+    AST.Get
   ].some(
     x => x.hasInstance(ast)
   );
@@ -193,7 +194,7 @@ provide(AST, 'prettyPrint', {
   },
 
   Lambda(depth) {
-    return `|${this.value.prettyPrint(depth)} @${this.options.prettyPrint(depth)}| ${this.expression.prettyPrint(depth)}`
+    return `${this.value.prettyPrint(depth)} @${this.options.prettyPrint(depth)} -> ${this.expression.prettyPrint(depth)}`
   },
 
   Tagged(depth) {

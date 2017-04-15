@@ -2,51 +2,57 @@
 
 import core "prelude"
 
-# --[ Constants and stuff ]--------------------------------------------
+# -- CONSTANTS
 define js-sources    = find (path "source/**/*.js")
 define ometa-sources = find (path "source/**/*.ometajs")
 define project-root  = Path.directory self.path
 
-define npm-bin name = take 1 (find-upwards project-root (path "node_modules/.bin" / name))
 
+# -- HELPERS
+define discard stream = stream |> (x -> Stream.empty)
 
-# --[ Helpers ]--------------------------------------------------------
+define npm-bin name = Stream.take 1 (find-upwards project-root (path "node_modules/.bin" / name))
+
 define to-js x = Path.change-extension ".js" x
 
 define ometa path @options =
   npm-bin "ometajs2js"
     |> (ometajs -> sequential [
-         $(ometajs.path '--input path '--output options.output),
-         from-vector [from: path to: options.output]
+         $(ometajs '--input path '--output options.output),
+         Stream.of (from: path  to: options.output)
        ])
 
 define parents path =
   if Path.is-root path then
-    [path]
+    Stream.of path
   else
-    Vector.concat [path] (parents (Path.directory path))
+    Stream.concatenate [Stream.of path, (parents (Path.directory path))]
 
 define find-upwards from pattern =
-  from-vector (parents from)
-    |> (base -> find pattern base-directory: base return-absolute-paths: true)
+  parents from
+    |> (base -> find pattern base-directory: base  return-absolute-paths: true)
+
 
 define build-to build-dir =
-  let    target dest = build-dir / Path.relative (path "source") to: dest
+  let    target dest   = build-dir / Path.relative (path "source") to: dest
   in let show prefix x = 
-       display-line (join " " [
-         Terminal.blue prefix,
-         Path.to-text x.from, "->", Path.to-text x.to
-       ])
-  in let show-copy = show "COPY"
-  in let show-ometa = show "OMETA"
-  in
+           Debug.log (Vector.join " " [Path.to-text x.from, "->", Path.to-text x.to]) prefix: prefix
+  in let show-copy x  = Stream.of (show "COPY" x)
+  in let show-ometa x = Stream.of (show "OMETA" x)
+  in 
   sequential [
-    make-directory build-dir | trace prefix: "MKDIR",
+    make-directory build-dir | Debug.trace prefix: "MKDIR",
     parallel [
-      js-sources
-        |> (x -> copy x.path to: (target x.path) `map show-copy),
+      js-sources 
+        |> (x -> copy x to: (target x))
+        |> show-copy,
+
       ometa-sources
-        |> (x -> ometa x.path output: (to-js (target x.path)) `map show-ometa)
+        |> (x -> sequential [
+             discard (make-directory (Path.directory (target x)) | Debug.trace prefix: "MKDIR"),
+             ometa x output: (to-js (target x))
+           ])
+        |> show-ometa
     ]
   ]
 
@@ -58,16 +64,12 @@ export define snapshot =
 
 export define build =
   # Builds the Furipota VM
-  build-to (path "furipota")
+  build-to (path "furipota-test")
 
 export define test =
   # Runs the tests for Furipota VM
   let run test = do [
-    display-line (join " " [
-      Terminal.blue "TEST",
-      Terminal.green (Path.to-text (Path.directory test.path))
-    ]),
-    $('node test.path) | show
+    Debug.log (Path.to-text (Path.directory test)) prefix: "TEST",
+    Terminal.show $('node test)
   ]
-  in find (path "tests/**/run.js")
-     |> run _
+  in find (path "tests/**/run.js") |> run _

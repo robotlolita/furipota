@@ -8,20 +8,15 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { stream, Stream } = furipota;
+  const { nativeModule, native, tagged } = furipota.primitives;
 
-  const compact = (object) => {
-    const result = {};
-    Object.keys(object).forEach(key => {
-      const value = object[key];
-      if (value !== undefined) {
-        result[key] = value;
+  return nativeModule('core:text', {
+    concatenate:
+    native('concatenate', [['Text', 'Text'], {}],
+      'joins two portions of text together',
+      (ctx, left, right, _options) => {
+        return left + right;
       }
-    });
-    return result;
-  };
-
-  return {
-    compact
-  };
-}
+    )
+  });
+};

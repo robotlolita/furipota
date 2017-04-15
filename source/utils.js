@@ -7,16 +7,16 @@
 //
 //----------------------------------------------------------------------
 
-module.exports = (furipota) => {
-  const { primitive, assertType } = furipota;
-
-  return {
-    concat(vm, x) {
-      return primitive((vm, y) => {
-        assertType('concat <A> _', 'Text', x);
-        assertType('concat _ <B>', 'Text', y);
-        return x + y;
-      });
+function compact(object) {
+  const result = {};
+  Object.keys(object).forEach(key => {
+    const value = object[key];
+    if (value !== undefined) {
+      result[key] = value;
     }
-  }
-};
+  });
+  return result;
+}
+
+
+module.exports = { compact };

@@ -9,7 +9,5 @@
 
 module.exports = {
   VM: require('./vm'),
-  ast: require('./ast'),
-  Stream: require('./stream'),
-  Parser: require('./parser').FuripotaParser
+  Stream: require('./data/stream')
 };

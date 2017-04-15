@@ -39,9 +39,9 @@ ometa FuripotaParser {
   comment = fromTo('#', '\n'):a -> a.slice(1),
   ws      = ignored*,
   sws     = ignored+,
-  kw :xs  = seq(xs) ~(letter | digit | '-' | '_' | ':'),
+  kw :xs  = seq(xs) ~(letter | digit | '-' | ':'),
   idStart = letter,
-  idRest  = (letter | digit | '-' | '_'),
+  idRest  = (letter | digit | '-'),
   eof     = ~char,
 
   octDigits = /[0-7][0-7_]*/:a             -> a.replace(/_/g, ''),
@@ -70,7 +70,7 @@ ometa FuripotaParser {
   Keyword = <idStart idRest*>:a ':'
             -> ast.Keyword(a),
 
-  symbol = <(letter | digit | infix)+>,
+  symbol = <(letter | digit | '-' | infix)+>,
 
   infix = (seq('===') | seq('=/=') | '>' | seq('>=') | seq('<=') | '+' | '-' | '*' | '/'):a
           -> ast.Identifier(a),
@@ -177,16 +177,14 @@ ometa FuripotaParser {
             -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
           | Infix,
 
-  Infix = Infix:l ws '`' Identifier:i ws Unary:r
-          -> ast.Infix(ast.Variable(i), l, r)
-        | Infix:l ws '`' qualifiedIdentifier:i ws Unary:r
+  Infix = Infix:l ws '`' qualifiedIdentifier:i ws Unary:r
           -> ast.Infix(i, l, r)
+        | Infix:l ws '`' Identifier:i ws Unary:r
+          -> ast.Infix(ast.Variable(i), l, r)
         | Postfix,
 
   Postfix = Postfix:e ws '|' ws memberExpression:i ws Record?:r
             -> ast.Invoke(i, e, r || ast.Record([]))
-          | Postfix:e ws '|' ws memberExpression:i ws '_' ws Record?:r
-            -> ast.Partial(i, r || ast.Record([]))
           | Relational,
 
   qualifiedIdentifier = qualifiedIdentifier:a ws '.' ws symbol:i
