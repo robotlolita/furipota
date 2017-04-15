@@ -1,7 +1,7 @@
 import "path"
 ---
 result: OK
-rule: Import
+rules: [Import, declaration]
 ast:
   !Import
   path: !Text "path"

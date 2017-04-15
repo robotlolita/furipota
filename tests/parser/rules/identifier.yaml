@@ -1,7 +1,7 @@
 valid
 ---
 result: OK
-rule: Identifier
+rules: [Identifier]
 ast: !Identifier valid
 
 ***
@@ -9,7 +9,7 @@ ast: !Identifier valid
 also-valid-here123
 ---
 result: OK
-rule: Identifier
+rules: [Identifier]
 ast: !Identifier also-valid-here123
 
 ***
@@ -17,7 +17,7 @@ ast: !Identifier also-valid-here123
 Caps-OK
 ---
 result: OK
-rule: Identifier
+rules: [Identifier]
 ast: !Identifier Caps-OK
 
 ***
@@ -25,11 +25,11 @@ ast: !Identifier Caps-OK
 -invalid
 ---
 result: FAIL
-rule: Identifier
+rules: [Identifier]
 
 ***
 
 1invalid
 ---
 result: FAIL
-rule: Identifier
+rules: [Identifier]

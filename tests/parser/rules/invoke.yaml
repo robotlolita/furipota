@@ -1,7 +1,7 @@
 f "a"
 ---
 result: OK
-rule: Invoke
+rules: [Invoke, expression]
 ast:
   !Invoke
   callee: !Variable { id: !Identifier f }
@@ -13,7 +13,7 @@ ast:
 f "a" opt: "b" another: "c"
 ---
 result: OK
-rule: Invoke
+rules: [Invoke, expression]
 ast:
   !Invoke
   callee: !Variable { id: !Identifier f }
@@ -28,7 +28,7 @@ ast:
 f g h "a"
 ---
 result: OK
-rule: Invoke
+rules: [Invoke, expression]
 ast:
   !Invoke
   callee:

@@ -1,7 +1,7 @@
 f a | b yo: "true" | c
 ---
 result: OK
-rule: Postfix
+rules: [Postfix, expression]
 ast:
   !Invoke
   callee: !Variable { id: !Identifier c }

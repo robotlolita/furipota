@@ -176,34 +176,37 @@ const parseTest = (text) => {
 const runTests = (file) => {
   const text = fs.readFileSync(file, 'utf8');
   const tests = parseTest(text);
-  return tests.map(({ source, meta }) => {
+  return flatten(tests.map(({ source, meta }) => {
     try {
-      const ast = Parser.matchAll(source, meta.rule || 'Program');
-      if (meta.result === 'FAIL') {
-        return Result.Error({
-          message: 'Expected the parser to fail, but it succeeded.',
-          ast: ast
-        });
-      } else if (meta.result === 'OK' && meta.ast.equals(ast)) {
-        return Result.Ok();
-      } else {
-        return Result.Error({
-          message: 'Expected AST and actual AST don’t match',
-          expected: meta.ast,
-          ast: ast
-        });
-      }
+      const rules = meta.rules || ['Program'];
+      return rules.map((rule) => {
+        const ast = Parser.matchAll(source, rule || 'Program');
+        if (meta.result === 'FAIL') {
+          return Result.Error({
+            message: `Expected the parser to fail, but it succeeded with rule ${rule}.`,
+            ast: ast
+          });
+        } else if (meta.result === 'OK' && meta.ast.equals(ast)) {
+          return Result.Ok();
+        } else {
+          return Result.Error({
+            message: `Expected AST and actual AST don’t match with rule ${rule}`,
+            expected: meta.ast,
+            ast: ast
+          });
+        }
+      });
     } catch (error) {
       if (meta.result === 'FAIL') {
-        return Result.Ok();
+        return [Result.Ok()];
       } else {
-        return Result.Error({
+        return [Result.Error({
           message: `${error.name}: ${error.message}`,
           stack: error.stack
-        });
+        })];
       }
     }
-  });
+  }));
 };
 
 

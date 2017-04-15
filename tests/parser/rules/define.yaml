@@ -1,7 +1,7 @@
 define hello = "hello" |> world
 ---
 result: OK
-rule: Define
+rules: [Define, declaration]
 ast:
   !Define
   id: !Identifier hello
@@ -20,7 +20,7 @@ define doc =
   expr
 ---
 result: OK
-rule: Define
+rules: [Define, declaration]
 ast:
   !Define
   id: !Identifier doc
