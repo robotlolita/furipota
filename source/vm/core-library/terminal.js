@@ -16,8 +16,14 @@ module.exports = (furipota) => {
       'outputs a stream to standard outputs',
       (ctx, stream, _options) => {
         stream.subscribe({
-          Value: (x) => process.stdout.write(x),
-          Error: (x) => process.stderr.write(x),
+          Value: async (x) => {
+            ctx.assertType('Text | Buffer', x);
+            process.stdout.write(x)
+          },
+          Error: (x) => {
+            ctx.assertType('Text | Buffer', x);
+            process.stderr.write(x)
+          },
           Close: () => {}
         });
 
