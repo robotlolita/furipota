@@ -181,7 +181,7 @@ ometa FuripotaParser {
   Let = kw('let') ws Identifier:i ws '=' ws expression:v ws kw('in') ws expression:e
         -> ast.Let(i, v, e)
       | kw('let') ws Identifier:i ws argNames:as ws '=' ws expression:v ws kw('in') ws expression:e
-        -> ast.Let(i, makeLambda(as, v), e),
+        -> ast.Let(i, makeLambda(as, v), e)
       | kw('let') ws Identifier:l ws infix:op ws Identifier:r (ws '@' Identifier)?:o ws '=' ws expression:v ws kw('in') ws expression:e
         -> ast.Let(op, makeLambda([l, r, o || ast.Identifier('_')], v), e),
 
