@@ -35,10 +35,9 @@ define find-upwards from pattern =
 
 define build-to build-dir =
   let    target dest   = build-dir / Path.relative (path "source") to: dest
-  in let show prefix x = 
-           Debug.log (Vector.join " " [Path.to-text x.from, "->", Path.to-text x.to]) prefix: prefix
-  in let show-copy x  = Stream.of (show "COPY" x)
-  in let show-ometa x = Stream.of (show "OMETA" x)
+  in let show prefix x = Debug.log "{x.from} -> {x.to}" prefix: prefix
+  in let show-copy x   = Stream.of (show "COPY" x)
+  in let show-ometa x  = Stream.of (show "OMETA" x)
   in 
   sequential [
     make-directory build-dir | Debug.trace prefix: "MKDIR",
@@ -49,10 +48,9 @@ define build-to build-dir =
 
       ometa-sources
         |> (x -> sequential [
-             discard (make-directory (Path.directory (target x)) | Debug.trace prefix: "MKDIR"),
-             ometa x output: (to-js (target x))
+             make-directory (Path.directory (target x)) | Debug.trace prefix: "MKDIR",
+             ometa x output: (to-js (target x)) |> show-ometa
            ])
-        |> show-ometa
     ]
   ]
 
@@ -70,7 +68,7 @@ export define test =
   # Runs the tests for Furipota VM
   let show-error e = match e
         Shell-error:     (e -> e.stack)
-        Shell-exit-code: (e -> Vector.join " " ["The program exited with code ", (Number.to-text e)])
+        Shell-exit-code: (e -> "The program exited with code {e}")
         Shell-stderr:    (e -> e)
   in let run test = do [
     Debug.log (Path.to-text (Path.directory test)) prefix: "TEST",

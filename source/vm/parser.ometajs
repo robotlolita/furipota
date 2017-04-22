@@ -59,8 +59,9 @@ ometa FuripotaParser {
                       | 't' -> '\t'
                       | char),
 
-  stringChar = stringEscape
-             | (~seq('"') char):a -> a,
+  stringChar = stringEscape:a       -> ast.Character(a)
+             | '{' expression:e '}' -> ast.InterpolateExpression(e)
+             | (~seq('"') char):a   -> ast.Character(a),
   unescapableChars = ~seq('"""') char,
 
 
@@ -98,7 +99,7 @@ ometa FuripotaParser {
   Text = seq('"""') <unescapableChars*>:as seq('"""')
          -> ast.Text(as)
        | '"' stringChar*:as '"'
-         -> ast.Text(as.join('')),
+         -> ast.Interpolate(as),
 
   Vector = '[' ws ']'
            -> ast.Vector([])

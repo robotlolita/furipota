@@ -9,7 +9,7 @@
 
 const { fromPairs } = require('folktale/core/object');
 const { Primitive, Partial, Lambda, NativeThunk, Thunk, Tagged } = require('./intrinsics');
-const { pathToText, textToPath, shell, tagged } = require('./primitives');
+const { pathToText, textToPath, shell, tagged, show } = require('./primitives');
 const AST = require('./ast');
 
 
@@ -49,6 +49,15 @@ function evaluate(ast, originalContext) {
 
     Text: ({ value }) =>
       value,
+
+    Character: ({ character }) =>
+      character,
+
+    InterpolateExpression: ({ expression }) =>
+      show(ctx, evaluate(expression, ctx)),
+
+    Interpolate: ({ items }) =>
+      items.map(x => evaluate(x, ctx)).join(''),
 
     Boolean: ({ value }) =>
       value,

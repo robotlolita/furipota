@@ -27,6 +27,18 @@ const AST = data('furipota:ast', {
     return { value };
   },
 
+  Character(character) {
+    return { character };
+  },
+
+  InterpolateExpression(expression) {
+    return { expression };
+  },
+
+  Interpolate(items) {
+    return { items };
+  },
+
   Integer(sign, value) {
     return { sign, value };
   },
@@ -171,6 +183,18 @@ provide(AST, 'prettyPrint', {
 
   Text(depth) {
     return JSON.stringify(this.value);
+  },
+
+  Interpolate(depth) {
+    return JSON.stringify(this.items.map(x => x.prettyPrint(depth)));
+  },
+
+  Character(depth) {
+    return this.character;
+  },
+
+  InterpolateExpression(depth) {
+    return `{${this.expression.prettyPrint(depth)}}`;
   },
 
   Integer(depth) {
