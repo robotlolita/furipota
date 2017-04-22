@@ -27,8 +27,8 @@ Create a `build.frp` file:
 
     export define hello-world =
       # Says "Hello, world"
-      from-vector ["Hello", ", ", "world"]
-        |> display
+      Stream.from-vector ["Hello", ", ", "world"]
+        |> (x -> Stream.of (display x))
 
 You can check which bindings are exported with `list`:
 
