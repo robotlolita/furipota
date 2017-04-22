@@ -10,6 +10,8 @@ Programming Tasks") is a discrete FRP DSL for describing better build pipelines.
 You define a closed system of discrete input streams and their transformations,
 and the VM takes care of running everything for you.
 
+[There's a vague roadmap here](https://www.evernote.com/shard/s215/sh/114a94ed-9b1f-4dcf-86f2-c0e59fce521a/d28809453db47741a6d9e8ea1520acad).
+
 
 ## Getting started
 
