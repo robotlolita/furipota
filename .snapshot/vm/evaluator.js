@@ -136,6 +136,9 @@ function evaluate(ast, originalContext) {
     Decimal: ({ sign, integral, decimal, exponent }) =>
       Number(sign + integral + '.' + (decimal || '0') + exponent),
 
+    Tagged: ({ tag, value }) =>
+      tagged(evaluate(tag, ctx), evaluate(value, ctx)),
+
     
     // --[ Complex values ]--------------------------------------------
     Vector: ({ items }) => {

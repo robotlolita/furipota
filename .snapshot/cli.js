@@ -11,6 +11,9 @@
 const program = require('commander');
 const path = require('path');
 const { FuripotaVM } = require('./vm');
+const { typeMatches } = require('./vm/types');
+const { show } = require('./vm/primitives');
+const { inspect } = require('util');
 const package = require('../package.json');
 
 
@@ -38,14 +41,17 @@ program.command('run <expression>')
       const ast = vm.parseExpression(expr);
       const context = vm.context(module, module.environment);
       const stream = vm.evaluate(ast, context);
-      vm.primitives.assertType('Stream', stream);
 
-      stream.subscribe({
-        Value: ()  => {},
-        Error: (e) => { console.error('Error:', e) },
-        Close: ()  => {}
-      });
-      await stream.run();
+      if (typeMatches('Stream', stream)) {
+        stream.subscribe({
+          Value: ()  => {},
+          Error: (e) => { console.error('Error:', e) },
+          Close: ()  => {}
+        });
+        await stream.run();
+      } else {
+        console.log(inspect(show(context, stream), false, 5, true));
+      }
     } catch (error) {
       showError(error);
       process.exit(1);
