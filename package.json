@@ -5,7 +5,8 @@
   "description": "A discrete FRP DSL for describing build pipelines.",
   "main": "./furipota/index.js",
   "bin": {
-    "furipota": "./bin/furipota"
+    "furipota": "./bin/furipota",
+    "furipota-run": "./bin/furipota-run"
   },
   "scripts": {
     "test": "./bin/furipota run test",

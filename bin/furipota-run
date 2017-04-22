@@ -1,0 +1,6 @@
+#!/usr/bin/env node
+const [_, __, file] = process.argv;
+process.argv.length = 2;
+process.argv.push('run', 'main', '--file', file);
+
+require('../furipota/cli');
