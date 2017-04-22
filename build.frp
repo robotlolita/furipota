@@ -68,8 +68,12 @@ export define build =
 
 export define test =
   # Runs the tests for Furipota VM
-  let run test = do [
+  let show-error e = match e
+        Shell-error:     (e -> e.stack)
+        Shell-exit-code: (e -> Vector.join " " ["The program exited with code ", (Number.to-text e)])
+        Shell-stderr:    (e -> e)
+  in let run test = do [
     Debug.log (Path.to-text (Path.directory test)) prefix: "TEST",
-    Terminal.show $('node test)
+    Terminal.show (Stream.map-errors show-error $('node test))
   ]
   in find (path "tests/**/run.js") |> run _
