@@ -37,6 +37,7 @@ module.exports = (furipota) => {
   const OS = require('./operating-system')(furipota);
   const Record = require('./record')(furipota);
   const Terminal = require('./terminal')(furipota);
+  const Number = require('./number')(furipota);
 
 
   return nativeModule('core:prelude', extend(
@@ -49,7 +50,8 @@ module.exports = (furipota) => {
       Vector: Vector.environment.bindings,
       'Operating-System': OS.environment.bindings,
       Record: Record.environment.bindings,
-      Terminal: Terminal.environment.bindings
+      Terminal: Terminal.environment.bindings,
+      Number: Number.environment.bindings
     }, 
     extract(Streams, [
       ['concatenate', 'sequential'],
@@ -64,6 +66,9 @@ module.exports = (furipota) => {
       'find', 'copy', 'make-directory', 'remove', 'Encoding',
       'list-directory', 'exists', 'read', 'write', 'symbolic-link',
       'unlink'
+    ]),
+    extract(Number, [
+      '+', '-', '*', 'divide', '>', '<', '<=', '>='
     ]),
     Core.environment.bindings,
     OS.environment.bindings
