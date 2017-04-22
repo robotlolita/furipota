@@ -133,6 +133,39 @@ class Stream {
     });
   }
 
+  andThen(handler) {
+    return new Stream(async (producer) => {
+      let errored = false;
+
+      this.subscribe({
+        Value: (x) => {},
+        Error: async (e) => {
+          errored = true;
+          await producer.pushValue(e);
+          await producer.close();
+        },
+
+        Close: async () => {
+          if (errored) {
+            await producer.close();
+          } else {
+            const that = handler();
+            
+            that.subscribe({
+              Value: producer.pushValue,
+              Error: producer.pushError,
+              Close: producer.close
+            });
+
+            await that.run();
+          }
+        }
+      })
+
+      return await this.run();
+    });
+  }
+
   swap() {
     return this.willMatchWith({
       Value: Stream.error,

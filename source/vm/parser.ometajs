@@ -16,7 +16,8 @@ var reserved = [
   'let', 'in',
   'if', 'then', 'else',
   'and', 'or', 'not',
-  'default'
+  'default',
+  'do', 'call', 'action', 'bind', 'return'
 ];
 
 function isValid(id) {
@@ -156,7 +157,26 @@ ometa FuripotaParser {
              | Record
              | Let
              | IfThenElse
-             | Pipe,
+             | Pipe
+             | Do,
+
+  doExpression = Lambda | Record | Pipe,
+
+  Do = kw('do') (ws DoInstruction)+:as
+       -> ast.Do(as),
+
+  DoInstruction = kw('call') ws doExpression:e
+                  -> ast.DoCall(e)
+                | kw('action') ws doExpression:e
+                  -> ast.DoAction(e)
+                | kw('let') ws Identifier:i ws '=' ws doExpression:e
+                  -> ast.DoLet(i, e)
+                | kw('if') ws Logical:c ws kw('then') (ws DoInstruction+):t ws kw('else') (ws DoInstruction+:a)
+                  -> ast.DoIfThenElse(c, t, a)
+                | kw('bind') ws Identifier:i ws seq('<-') ws doExpression:e
+                  -> ast.DoBind(i, e)
+                | kw('return') ws doExpression:e
+                  -> ast.DoReturn(e),
 
   Let = kw('let') ws Identifier:i ws '=' ws expression:v ws kw('in') ws expression:e
         -> ast.Let(i, v, e)
