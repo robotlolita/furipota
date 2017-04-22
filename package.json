@@ -1,6 +1,6 @@
 {
   "name": "furipota",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A discrete FRP DSL for describing build pipelines.",
   "main": "./furipota/index.js",
