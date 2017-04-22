@@ -40,13 +40,6 @@ program.command('run <expression>')
       const stream = vm.evaluate(ast, context);
       vm.primitives.assertType('Stream', stream);
 
-      stream.subscribe({
-        Value(x){ },
-        Error(x){
-          console.log('Error:', x);
-        },
-        Close(){ }
-      });
       await stream.run();
     } catch (error) {
       showError(error);
