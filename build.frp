@@ -64,7 +64,7 @@ export define snapshot =
 
 export define build =
   # Builds the Furipota VM
-  build-to (path "furipota-test")
+  build-to (path "furipota")
 
 export define test =
   # Runs the tests for Furipota VM
