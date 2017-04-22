@@ -34,8 +34,8 @@ define find-upwards from pattern =
 define build-to build-dir =
   let    target dest   = build-dir / Path.relative (path "source") to: dest
   in let show prefix x = Debug.log "{x.from} -> {x.to}" prefix: prefix
-  in let show-copy x   = Stream.of (show "COPY" x)
-  in let show-ometa x  = Stream.of (show "OMETA" x)
+  in let show-copy x   = show "COPY" x
+  in let show-ometa x  = show "OMETA" x
   in do
     action make-directory build-dir | Debug.trace prefix: "MKDIR"
     action parallel [
@@ -65,5 +65,5 @@ export define test =
         Shell-stderr:    (e -> e)
   in do
     bind test <- find (path "tests/**/run.js")
-    call Debug.log (Path.to-text (Path.directory test)) prefix: "TEST"
+    action Debug.log (Path.to-text (Path.directory test)) prefix: "TEST"
     action Terminal.show (Stream.map-errors show-error $('node test))
