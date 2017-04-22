@@ -70,7 +70,7 @@ Dynamic sequences of values. Vectors use the same syntax as JavaScript's Arrays,
 Pairs of symbols and values. Records are represented as JavaScript's objects, however Furipota ignores all prototypical delegation.
 
 ```ruby
-hello: 1  world: 2
+-hello: 1  -world: 2
 # => { "hello": 1, "world": 2 }
 ```
 
@@ -79,7 +79,7 @@ Empty records use the `{}` syntax for now, but will most likely move to a functi
 Properties of a record can be acessed with the `.` syntax:
 
 ```ruby
-(hello: 1).hello
+(-hello: 1).hello
 # => 1
 ```
 
@@ -91,7 +91,7 @@ Finally, Furipota has functions. Functions are first-class computations that rec
 ```ruby
 let say = (message @ options -> "Hello {message}")
 in
-say "world" {}
+say "world" @ -options: "here"
 # => "Hello world"
 ```
 
@@ -156,7 +156,7 @@ And you extract values from tags with the `match` function:
 
 ```ruby
 match one
-  Int: (value -> value + 1)
+  -Int value: (value + 1)
 ```
 
 ## Modules and definitions
