@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, unit } = furipota.primitives;
+  const { nativeModule, native, unit, Stream } = furipota.primitives;
 
   return nativeModule('core:terminal', {
     show:
@@ -36,7 +36,7 @@ module.exports = (furipota) => {
       'Writes a chunk to standard output',
       (ctx, chunk, _options) => {
         process.stdout.write(chunk);
-        return unit;
+        return Stream.empty();
       }
     ),
 
@@ -45,7 +45,7 @@ module.exports = (furipota) => {
       'Writes a line to standard output',
       (ctx, chunk, _options) => {
         process.stdout.write(chunk + '\n');
-        return unit;
+        return Stream.empty();
       }
     ),
 
@@ -54,7 +54,7 @@ module.exports = (furipota) => {
       'Writes a chunk to standard error output',
       (ctx, chunk, _options) => {
         process.stderr.write(chunk);
-        return unit;
+        return Stream.empty();
       }
     ),
 
@@ -64,7 +64,7 @@ module.exports = (furipota) => {
       'Writes a line to standard error output',
       (ctx, chunk, _options) => {
         process.stdout.write(chunk + '\n');
-        return unit;
+        return Stream.empty();
       }
     )    
   });
