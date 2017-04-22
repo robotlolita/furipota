@@ -7,7 +7,16 @@
 //
 //----------------------------------------------------------------------
 
-module.exports = {
-  VM: require('./vm'),
-  Stream: require('./data/stream')
+module.exports = (furipota) => {
+  const { nativeModule, native, tagged } = furipota.primitives;
+
+  return nativeModule('core:text', {
+    concatenate:
+    native('concatenate', [['Text', 'Text'], {}],
+      'joins two portions of text together',
+      (ctx, left, right, _options) => {
+        return left + right;
+      }
+    )
+  });
 };

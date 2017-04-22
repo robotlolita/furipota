@@ -7,7 +7,16 @@
 //
 //----------------------------------------------------------------------
 
-module.exports = {
-  VM: require('./vm'),
-  Stream: require('./data/stream')
-};
+function compact(object) {
+  const result = {};
+  Object.keys(object).forEach(key => {
+    const value = object[key];
+    if (value !== undefined) {
+      result[key] = value;
+    }
+  });
+  return result;
+}
+
+
+module.exports = { compact };

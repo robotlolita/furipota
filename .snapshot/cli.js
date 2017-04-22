@@ -10,13 +10,20 @@
 
 const program = require('commander');
 const path = require('path');
-const VM = require('./vm');
+const { FuripotaVM } = require('./vm');
 const package = require('../package.json');
 
-const collect = (value, memo) => {
-  memo.push(value);
-  return memo;
-};
+
+const vm = new FuripotaVM();
+
+
+function showError(error) {
+  if (error.isFuripotaError) {
+    console.error(error.message);
+  } else {
+    console.error(error.stack);
+  }
+}
 
 
 program.version(package.version);
@@ -27,9 +34,12 @@ program.command('run <expression>')
   .action(async (expr, options) => {
     try {
       const fullPath = path.resolve(process.cwd(), options.file);
-      const vm = VM.fromFile(fullPath);
+      const module = vm.loadModule(fullPath, 'furipota');
       const ast = vm.parseExpression(expr);
-      const stream = vm.evaluate(ast, vm.module.environment);
+      const context = vm.context(module, module.environment);
+      const stream = vm.evaluate(ast, context);
+      vm.primitives.assertType('Stream', stream);
+
       stream.subscribe({
         Value(x){ },
         Error(x){
@@ -39,11 +49,7 @@ program.command('run <expression>')
       });
       await stream.run();
     } catch (error) {
-      if (error.isFuripotaError) {
-        console.error(error.message);
-      } else {
-        console.error(error.stack);
-      }
+      showError(error);
       process.exit(1);
     }
   });
@@ -54,14 +60,14 @@ program.command('list')
   .action(async (options) => {
     try {
       const fullPath = path.resolve(process.cwd(), options.file);
-      const vm = VM.fromFile(fullPath);
+      const module = vm.loadModule(fullPath, 'furipota');
 
       console.log('');
       console.log('Available commands:');
       console.log('-------------------');
       console.log('');
 
-      const bindings = vm.module.exportedBindings;
+      const bindings = module.exportedBindings;
       const keys = Object.keys(bindings);
       const size = Math.max(...keys.map(x => x.length)) + 6;
       const docSize = 79 - size;
@@ -73,10 +79,16 @@ program.command('list')
         console.log(`  ${k}    ${restrict(value.documentation || '')}`);
       });
     } catch (error) {
-      console.error(error.stack);
+      showError(error);
       process.exit(1);
     }
   });
+
+
+process.on('unhandledRejection', (error) => {
+  showError(error);
+  process.exit(1);
+});
 
 program.parse(process.argv);
 
