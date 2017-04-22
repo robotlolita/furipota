@@ -15,10 +15,10 @@ define npm-bin name = Stream.take 1 (find-upwards project-root (path "node_modul
 
 define to-js x = Path.change-extension ".js" x
 
-define ometa path @options = do
+define ometa path @ options = do
   bind ometajs <- npm-bin "ometajs2js"
   action $(ometajs '--input path '--output options.output)
-  return from: path  to: options.output
+  return -from: path -to: options.output
 
 define parents path =
   if Path.is-root path then
@@ -28,23 +28,23 @@ define parents path =
 
 define find-upwards from pattern =
   parents from
-    |> (base -> find pattern base-directory: base  return-absolute-paths: true)
+    |> (base -> find pattern @ -base-directory: base  -return-absolute-paths: true)
 
 
 define build-to build-dir =
-  let    target dest   = build-dir / Path.relative (path "source") to: dest
-  in let show prefix x = Debug.log "{x.from} -> {x.to}" prefix: prefix
+  let    target dest   = build-dir / Path.relative (path "source") @ -to: dest
+  in let show prefix x = Debug.log "{x.from} -> {x.to}" @ -prefix: prefix
   in let show-copy x   = show "COPY" x
   in let show-ometa x  = show "OMETA" x
   in do
-    action make-directory build-dir | Debug.trace prefix: "MKDIR"
+    action make-directory build-dir | Debug.trace @ -prefix: "MKDIR"
     action parallel [
-      js-sources |> (x -> copy x to: (target x))
+      js-sources |> (x -> copy x @ -to: (target x))
                  |> show-copy,
 
       do bind x <- ometa-sources
-         action make-directory (Path.directory (target x)) | Debug.trace prefix: "MKDIR"
-         action ometa x output: (to-js (target x)) |> show-ometa
+         action make-directory (Path.directory (target x)) | Debug.trace @ -prefix: "MKDIR"
+         action (ometa x @ -output: (to-js (target x))) |> show-ometa
     ]
 
 
@@ -59,11 +59,11 @@ export define build =
 
 export define test =
   # Runs the tests for Furipota VM
-  let show-error e = match e
-        Shell-error:     (e -> e.stack)
-        Shell-exit-code: (e -> "The program exited with code {e}")
-        Shell-stderr:    (e -> e)
+  let show-error e = match e @ 
+        -Shell-error e     -> e.stack
+        -Shell-exit-code e -> "The program exited with code {e}"
+        -Shell-stderr e    -> e
   in do
     bind test <- find (path "tests/**/run.js")
-    action Debug.log (Path.to-text (Path.directory test)) prefix: "TEST"
+    action Debug.log (Path.to-text (Path.directory test)) @ -prefix: "TEST"
     action Terminal.show (Stream.map-errors show-error $('node test))

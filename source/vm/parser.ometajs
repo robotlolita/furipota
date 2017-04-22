@@ -69,7 +69,7 @@ ometa FuripotaParser {
   Identifier = <idStart idRest*>:a ?isValid(a)
                -> ast.Identifier(a),
 
-  Keyword = <idStart idRest*>:a ':'
+  Keyword = '-' <idStart idRest*>:a ':'
             -> ast.Keyword(a),
 
   symbol = <(letter | digit | '-' | infix)+>,
@@ -107,12 +107,13 @@ ometa FuripotaParser {
          | '[' ws expression:a (ws ',' ws expression)*:as ws ']'
            -> ast.Vector([a].concat(as)),
 
-  Record = '{' ws '}'
-           -> ast.Record([])
-         | recordPair:a (sws recordPair)*:xs
+  Record = recordPair:a (ws recordPair)*:xs
            -> ast.Record([a].concat(xs)),
 
-  recordPair = Keyword:k ws recordExpression:v -> [k, v],
+  recordPair = '-' Identifier:a (ws Identifier)+:as ws seq('->') ws recordExpression:v
+               -> [ast.Keyword(a.name), makeLambda(as.concat(ast.Identifier('_')), v)]
+             | Keyword:k ws recordExpression:v 
+               -> [k, v],
 
   recordExpression = memberExpression
                    | Vector
@@ -132,10 +133,10 @@ ometa FuripotaParser {
            -> ast.Define(i, e, d || '')
          | kw('define') ws Identifier:i ws argNames:as ws '=' doc?:d ws expression:e
            -> ast.Define(i, makeLambda(as, e), d || '')
-         | kw('define') ws Identifier:l ws infix:op ws Identifier:r (ws '@' Identifier)?:o ws '=' doc?:d ws expression:e
-           -> ast.Define(op, makeLambda([l, r, o || ast.Identifier('_')], e), d || ''),
+         | kw('define') ws Identifier:l ws infix:op ws Identifier:r ws '=' doc?:d ws expression:e
+           -> ast.Define(op, makeLambda([l, r, ast.Identifier('_')], e), d || ''),
 
-  argNames = (ws Identifier)+:as (ws '@' Identifier)?:r -> as.concat([r || ast.Identifier('_')]),
+  argNames = (ws Identifier)+:as (ws '@' ws Identifier)?:r -> as.concat([r || ast.Identifier('_')]),
   doc = (space* comment)*:xs -> xs.join(''),
 
   Import = kw('import') ws importKind?:k ws Text:p ws kw('as') ws Identifier:i
@@ -153,8 +154,8 @@ ometa FuripotaParser {
            -> ast.Export(i),
 
   // --[ Expressions ]
-  expression = Lambda
-             | Record
+  expression = Record
+             | Lambda
              | Let
              | IfThenElse
              | Pipe
@@ -182,8 +183,8 @@ ometa FuripotaParser {
         -> ast.Let(i, v, e)
       | kw('let') ws Identifier:i ws argNames:as ws '=' ws expression:v ws kw('in') ws expression:e
         -> ast.Let(i, makeLambda(as, v), e)
-      | kw('let') ws Identifier:l ws infix:op ws Identifier:r (ws '@' Identifier)?:o ws '=' ws expression:v ws kw('in') ws expression:e
-        -> ast.Let(op, makeLambda([l, r, o || ast.Identifier('_')], v), e),
+      | kw('let') ws Identifier:l ws infix:op ws Identifier:r ws '=' ws expression:v ws kw('in') ws expression:e
+        -> ast.Let(op, makeLambda([l, r, ast.Identifier('_')], v), e),
 
   IfThenElse = kw('if') ws expression:c
                  ws kw('then') ws expression:t
@@ -204,7 +205,7 @@ ometa FuripotaParser {
           -> ast.Infix(ast.Variable(i), l, r)
         | Postfix,
 
-  Postfix = Postfix:e ws '|' ws memberExpression:i ws Record?:r
+  Postfix = Postfix:e ws '|' ws memberExpression:i (ws '@' ws Record)?:r
             -> ast.Invoke(i, e, r || ast.Record([]))
           | Relational,
 
@@ -227,9 +228,9 @@ ometa FuripotaParser {
           -> ast.Prefix(ast.Identifier('not'), e)
         | Invoke,
 
-  Invoke = Invoke:i ws memberExpression:v ws Record?:r
+  Invoke = Invoke:i ws memberExpression:v (ws '@' ws Record)?:r
            -> ast.Invoke(i, v, r || ast.Record([]))
-         | Invoke:i ws '_' ws Record?:r
+         | Invoke:i ws '_' (ws '@' ws Record)?:r
            -> ast.Partial(i, r || ast.Record([]))
          | memberExpression,
 

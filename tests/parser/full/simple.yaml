@@ -2,7 +2,7 @@
 import """core"""
 
 define source = watch """src/*.js"""
-define compile = source |> babel _ output-directory: """lib"""
+define compile = source |> babel _ @ -output-directory: """lib"""
 ---
 result: OK
 ast:
