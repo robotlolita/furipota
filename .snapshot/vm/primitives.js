@@ -15,7 +15,7 @@ const { compact } = require('../utils');
 const { Environment } = require('./environment');
 const { Primitive, Partial, Lambda, NativeThunk, Thunk, Tagged, Module } = require('./intrinsics');
 const { assertParameters, assert, assertType } = require('./assertion');
-const { typeMatches } = require('./types');
+const { typeMatches, getType } = require('./types');
 
 
 // --[ Helpers ]-------------------------------------------------------
@@ -32,6 +32,14 @@ function curry(name, doc, arity, fn) {
   });
 
   return curried([]);
+}
+
+function typeMatch(ctx, value, patterns) {
+  const tag = getType(value);
+  ctx.assert(tag in patterns || patterns['default'], `The type ${tag} is not supported.`);
+
+  const method = patterns[tag] || patterns['default'];
+  return method(value);
 }
 
 
@@ -61,6 +69,20 @@ function nativeModule(name, record) {
   Object.keys(record).forEach(k => module.export(k, k));
 
   return module;
+}
+
+function show(ctx, x) {
+  return typeMatch(ctx, x, {
+    'Boolean': (x) => String(x),
+    'Number':  (x) => String(x),
+    'Text':    (x) => x,
+    'Vector':  (x) => `[${x.map(show).join(', ')}]`,
+    '^Path':   (x) => pathToText(x),
+    '^Shell-stderr':    (x) => x.value,
+    '^Shell-error':     (x) => x.value.stack,
+    '^Shell-exit-code': (x) => `exit code: ${x.value}`,
+    'default': (x) => getType(x)
+  });
 }
 
 
@@ -161,7 +183,7 @@ const unit = tagged('Unit', {});
 
 
 module.exports = {
-  typeMatches, assert, assertType,
+  typeMatches, assert, assertType, show,
   native, tagged, nativeModule, nativeThunk,
   pathToText, textToPath,
   stream,
