@@ -1,4 +1,4 @@
-f "hello" |> g _
+f """hello""" |> g _
 ---
 result: OK
 rules: [Pipe, expression]

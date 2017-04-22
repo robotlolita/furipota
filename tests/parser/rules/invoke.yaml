@@ -1,4 +1,4 @@
-f "a"
+f """a"""
 ---
 result: OK
 rules: [Invoke, expression]
@@ -10,7 +10,7 @@ ast:
 
 ***
 
-f "a" opt: "b" another: "c"
+f """a""" opt: """b""" another: """c"""
 ---
 result: OK
 rules: [Invoke, expression]
@@ -25,7 +25,7 @@ ast:
 
 ***
 
-f g h "a"
+f g h """a"""
 ---
 result: OK
 rules: [Invoke, expression]

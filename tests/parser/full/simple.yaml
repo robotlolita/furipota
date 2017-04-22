@@ -1,8 +1,8 @@
 %furipota/1
-import "core"
+import """core"""
 
-define source = watch "src/*.js"
-define compile = source |> babel _ output-directory: "lib"
+define source = watch """src/*.js"""
+define compile = source |> babel _ output-directory: """lib"""
 ---
 result: OK
 ast:

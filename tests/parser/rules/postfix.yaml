@@ -1,4 +1,4 @@
-f a | b yo: "true" | c
+f a | b yo: """true""" | c
 ---
 result: OK
 rules: [Postfix, expression]

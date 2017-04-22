@@ -1,4 +1,4 @@
-define hello = "hello" |> world
+define hello = """hello""" |> world
 ---
 result: OK
 rules: [Define, declaration]

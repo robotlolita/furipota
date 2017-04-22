@@ -1,4 +1,4 @@
-import "path"
+import """path"""
 ---
 result: OK
 rules: [Import, declaration]
