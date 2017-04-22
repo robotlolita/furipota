@@ -9,7 +9,7 @@
 
 const { fromPairs } = require('folktale/core/object');
 const { Primitive, Partial, Lambda, NativeThunk, Thunk, Tagged } = require('./intrinsics');
-const { pathToText, textToPath, shell, tagged, show } = require('./primitives');
+const { pathToText, textToPath, shell, tagged, show, unit, Stream } = require('./primitives');
 const AST = require('./ast');
 
 
@@ -30,6 +30,74 @@ function last(xs) {
 function flatten(xss) {
   return xss.reduce((a, b) => a.concat(b), []);
 }
+
+
+// The do-language instruction interpreter
+function evaluateDo(instructions, originalContext) {
+  if (instructions.length === 0) {
+    return Stream.empty();
+  }
+
+  const [instruction, ...next] = instructions;
+  const ctx = originalContext.traceExpression(instruction);
+
+  return instruction.matchWith({
+    DoCall: ({ expression }) => {
+      evaluate(expression, ctx);
+      return evaluateDo(next, ctx);
+    },
+
+    DoAction: ({ expression }) => {
+      const newStream = evaluate(expression, ctx);
+      ctx.assertType('Stream', newStream);
+
+      if (next.length) {
+        return newStream.andThen(() => {
+          return evaluateDo(next, ctx);
+        });
+      } else {
+        return newStream;
+      }
+    },
+
+    DoReturn: ({ expression }) => {
+      ctx.assert(next.length === 0, 'return must be the last instruction in a do block');
+      const value = evaluate(expression, ctx);
+      return Stream.of(value);
+    },
+
+    DoBind: ({ id, expression }) => {
+      ctx.assert(next.length > 0, 'bind can´t be the last instruction in a do block');
+      const idValue = evaluate(id, ctx);
+      const newStream = evaluate(expression, ctx);
+      ctx.assertType('Stream', newStream);
+
+      return newStream.chain((value) => {
+        const newCtx = ctx.extendEnvironment({ [idValue]: value });
+        return evaluateDo(next, newCtx);
+      });
+    },
+
+    DoLet: ({ id, expression }) => {
+      const idValue = evaluate(id, ctx);
+      const value = evaluate(expression, ctx);
+      const newCtx = ctx.extendEnvironment({ [idValue]: value });
+      return evaluateDo(next, newCtx);
+    },
+
+    DoIfThenElse: ({ condition, consequent, alternate }) => {
+      ctx.assert(next.length === 0, 'if...then...else must be the last instruction in a do block');
+
+      const conditionValue = evaluate(condition, ctx);
+      if (conditionValue) {
+        return evaluateDo(consequent, ctx);
+      } else {
+        return evaluateDo(alternate, ctx);
+      }
+    }
+  });
+}
+
 
 
 // The main tree-walking interpreter
@@ -95,14 +163,14 @@ function evaluate(ast, originalContext) {
       const name = evaluate(id, ctx);
       const thunk = new Thunk(ctx, name, expression, documentation);
       ctx.environment.define(name, thunk);
-      return tagged('^Unit', {});
+      return unit;
     },
 
     Import: ({ path, kind }) => {
       const pathValue = evaluate(path, ctx);
       const module = ctx.loadModule(pathValue, kind);
       ctx.environment.extend(module.exportedBindings);
-      return tagged('^Unit', {});
+      return unit;
     },
 
     ImportAliasing: ({ path, alias, kind }) => {
@@ -118,20 +186,20 @@ function evaluate(ast, originalContext) {
           `A ${kind} module from ${pathValue}`
         )
       );
-      return tagged('^Unit', {});
+      return unit;
     },
 
     Export: ({ identifier }) => {
       const idValue = evaluate(identifier, ctx);
       ctx.module.export(idValue, idValue);
-      return tagged('^Unit', {});
+      return unit;
     },
 
     ExportAliasing: ({ identifier, alias }) => {
       const idValue = evaluate(identifier, ctx);
       const aliasValue = evaluate(alias, ctx);
       ctx.module.export(aliasValue, idValue);
-      return tagged('^Unit', {});
+      return unit;
     },
 
 
@@ -264,10 +332,15 @@ function evaluate(ast, originalContext) {
     },
 
 
-    // --[ Entry point ]----------------------------------------------=
+    // --[ Do expressions ]--------------------------------------------
+    Do: ({ instructions }) =>
+      evaluateDo(instructions, ctx),
+
+
+    // --[ Entry point ]-----------------------------------------------
     Program: ({ declarations }) => {
       declarations.forEach(d => evaluate(d, ctx));
-      return tagged('^Unit', {});
+      return unit;
     }
   })
 }

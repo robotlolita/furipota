@@ -19,6 +19,7 @@ const primitives = require('./primitives');
 const AST = require('./ast');
 const Parser = require('./parser').FuripotaParser;
 const CoreModules = require('./core-library');
+const Plugins = require('./plugins');
 
 
 function readAsText(path) {
@@ -29,6 +30,7 @@ function readAsText(path) {
 class FuripotaVM {
   constructor() {
     this.coreModules = CoreModules;
+    this.plugins = Plugins;
     this.globals = new Environment(null);
     this.primitives = primitives;
     this.moduleCache = new Map();
@@ -65,7 +67,11 @@ class FuripotaVM {
       }
 
       case 'plugin': {
-        return require(file)(this);
+        if (this.plugins.hasOwnProperty(file)) {
+          return this.plugins[file](this);
+        } else {
+          return require(file)(this);
+        }
       }
 
       case 'furipota': {

@@ -60,15 +60,6 @@ module.exports = (furipota) => {
       (ctx, left, right, _options) => {
         return left !== right; // FIXME: structural equality
       }
-    ),
-
-    'do':
-    native('do', [['Vector'], {}],
-      'evaluates expressions in sequence, returns the last one',
-      (ctx, expressions, _options) => {
-        ctx.assert(expressions.length > 0, `(do expressions) needs at least one expression`);
-        return expressions[expressions.length - 1];
-      }
     )
   });
 };

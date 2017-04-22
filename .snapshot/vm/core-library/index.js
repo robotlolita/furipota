@@ -18,5 +18,6 @@ module.exports = {
   'operating-system': require('./operating-system'),
   record: require('./record'),
   terminal: require('./terminal'),
+  number: require('./number'),
   prelude: require('./prelude')
 };

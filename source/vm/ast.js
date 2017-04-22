@@ -125,6 +125,8 @@ const AST = data('furipota:ast', {
     return { operator, expression };
   },
 
+
+  // --[ Shell sublanguage ]-------------------------------------------
   Shell(command, args, options) {
     return { command, args, options }
   },
@@ -139,6 +141,36 @@ const AST = data('furipota:ast', {
 
   ShellExpression(expression) {
     return { expression };
+  },
+
+
+  // --[ Imperative sublanguage ]--------------------------------------
+  Do(instructions) {
+    return { instructions };
+  },
+
+  DoCall(expression) {
+    return { expression };
+  },
+
+  DoAction(expression) {
+    return { expression };
+  },
+
+  DoReturn(expression) {
+    return { expression };
+  },
+
+  DoBind(id, expression) {
+    return { id, expression };
+  },
+
+  DoLet(id, expression) {
+    return { id, expression };
+  },
+
+  DoIfThenElse(condition, consequent, alternate) {
+    return { condition, consequent, alternate };
   },
 
   // --[ Entry point ]--------------------------------------------------
@@ -296,6 +328,40 @@ provide(AST, 'prettyPrint', {
 
   ShellExpression(depth) {
     return p(this.expression, depth);
+  },
+
+  Do(depth) {
+    return `do\n  ${this.instructions.map(x => x.prettyPrint(depth + 2)).join('\n' + ' '.repeat(depth + 2))}`;
+  },
+
+  DoCall(depth) {
+    return `call ${this.expression.prettyPrint(depth)}`;
+  },
+
+  DoAction(depth) {
+    return `action ${this.expression.prettyPrint(depth)}`;
+  },
+
+  DoReturn(depth) {
+    return `return ${this.expression.prettyPrint(depth)}`;
+  },
+
+  DoBind(depth) {
+    return `bind ${this.id.prettyPrint(depth)} <- ${this.expression.prettyPrint(depth)}`;
+  },
+
+  DoLet(depth) {
+    return `let ${this.id.prettyPrint(depth)} = ${this.expression.prettyPrint(depth)}`;
+  },
+
+  DoIfThenElse(depth) {
+    return [
+      `if ${this.condition.prettyPrint(depth)}`,
+      'then',
+        ...this.consequent.map(x => `  ${x.prettyPrint(depth + 2)}`),
+      'else',
+        ...this.alternate.map(x => `  ${x.prettyPrint(depth + 2)}`)
+    ].join('\n' + ' '.repeat(depth));
   },
 
   Program(depth) {
