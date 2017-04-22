@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, tagged } = furipota.primitives;
+  const { nativeModule, native, tagged, Stream } = furipota.primitives;
 
   const { inspect } = require('util');
   const { compact } = require('../../utils');
@@ -51,7 +51,7 @@ module.exports = (furipota) => {
       'shows an object on the screen',
       (ctx, value, options) => {
         show(options, '', Maybe.Just(value));
-        return tagged('Unit', {});
+        return Stream.of(value);
       }
     ),
 
