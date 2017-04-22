@@ -284,3 +284,17 @@ do
     return x
 )
 ```
+
+
+## Using Furipota for shell-scripting
+
+You can use Furipota for shell scripting by putting `furipota-run` in your path (`npm install -g origamitower/furipota` will do just that), using a hashbang, and providing a `main` definition.
+
+```ruby
+#!/usr/bin/env furipota-run
+%furipota/1
+
+import core "prelude"
+
+export define main = Debug.log "hello world"
+```
