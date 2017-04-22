@@ -131,7 +131,7 @@ ometa FuripotaParser {
   Define = kw('define') ws Identifier:i ws '=' doc?:d ws expression:e
            -> ast.Define(i, e, d || '')
          | kw('define') ws Identifier:i ws argNames:as ws '=' doc?:d ws expression:e
-           -> ast.Define(i, makeLambda(as, e), d || ''),
+           -> ast.Define(i, makeLambda(as, e), d || '')
          | kw('define') ws Identifier:l ws infix:op ws Identifier:r (ws '@' Identifier)?:o ws '=' doc?:d ws expression:e
            -> ast.Define(op, makeLambda([l, r, o || ast.Identifier('_')], e), d || ''),
 
