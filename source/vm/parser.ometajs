@@ -171,7 +171,7 @@ ometa FuripotaParser {
                   -> ast.DoAction(e)
                 | kw('let') ws Identifier:i ws '=' ws doExpression:e
                   -> ast.DoLet(i, e)
-                | kw('if') ws Logical:c ws kw('then') (ws DoInstruction+):t ws kw('else') (ws DoInstruction+:a)
+                | kw('if') ws Logical:c ws kw('then') (ws DoInstruction+):t ws kw('else') (ws DoInstruction+):a
                   -> ast.DoIfThenElse(c, t, a)
                 | kw('bind') ws Identifier:i ws seq('<-') ws doExpression:e
                   -> ast.DoBind(i, e)
