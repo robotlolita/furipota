@@ -51,9 +51,11 @@ function getType(x) {
 }
 
 function typeMatches(type, value) {
-  if (type === 'Any') {
+  if (/\|/.test(type)) {
+    return type.split('|').map(x => x.trim()).some(t => typeMatches(t, value));
+  } else if (type === 'Any') {
     return !/^Unknown Type/.test(getType(value));
-  } if (type === 'Invokable') {
+  } else if (type === 'Invokable') {
     return ['Primitive', 'Partial', 'Lambda', 'Thunk'].includes(getType(value));
   } else {
     return getType(value) === type;
