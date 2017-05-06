@@ -74,7 +74,7 @@ ometa FuripotaParser {
 
   symbol = <(letter | digit | '-' | infix)+>,
 
-  infix = (seq('===') | seq('=/=') | '>' | seq('>=') | seq('<=') | '+' | '-' | '*' | '/'):a
+  infix = (seq('===') | seq('=/=') | '>' | seq('>=') | seq('<') | seq('<=') | '+' | '-' | '*' | '/'):a
           -> ast.Identifier(a),
 
 
