@@ -37,6 +37,7 @@ define build-to build-dir =
   in let show-copy x   = show "COPY" x
   in let show-ometa x  = show "OMETA" x
   in do
+    action remove build-dir | Debug.trace @ -prefix: "RMDIR"
     action make-directory build-dir | Debug.trace @ -prefix: "MKDIR"
     action parallel [
       js-sources |> (x -> copy x @ -to: (target x))
