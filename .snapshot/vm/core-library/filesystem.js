@@ -75,7 +75,7 @@ module.exports = (furipota) => {
     native('remove', [['^Path'], {}],
       'removes a path from the file system',
       (ctx, path, options) => {
-        return stream(async (producere) => {
+        return stream(async (producer) => {
           try {
             await fsw.remove(pathToText(path), { disableGlob: true });
             await producer.close();
