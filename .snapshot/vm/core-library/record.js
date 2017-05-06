@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, tagged, ok, error } = furipota.primitives;
+  const { nativeModule, native, nativeThunk, tagged, ok, error } = furipota.primitives;
   const hasOwn = Function.call.bind(Object.prototype.hasOwnProperty);
 
   return nativeModule('core:record', {
@@ -38,6 +38,11 @@ module.exports = (furipota) => {
       (ctx, left, right, _options) => {
         return Object.assign({}, left, right);
       }
+    ),
+
+    'empty':
+    nativeThunk('empty', 'Constructs an empty record',
+      (ctx) => ({})
     )
   });
 };
