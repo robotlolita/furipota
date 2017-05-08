@@ -1,6 +1,6 @@
 # FuriPota (フリポタ)
 
-<img src="https://raw.githubusercontent.com/origamitower/furipota/logo/.github/furipota.png" alt="furipota logo" align="left">
+<img src="https://raw.githubusercontent.com/origamitower/furipota/master/.github/furipota.png" alt="furipota logo" align="left">
 
 
 > **NOTE**  
