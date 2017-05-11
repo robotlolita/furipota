@@ -19,7 +19,7 @@ their transformations (as pure functions). Dependencies are implicitly described
 by such transformations. The description is fed to the FuriPota runtime, which
 takes care of applying it to get the desired results.
 
-[There's a vague roadmap here](https://www.evernote.com/shard/s215/sh/114a94ed-9b1f-4dcf-86f2-c0e59fce521a/d28809453db47741a6d9e8ea1520acad).
+[There's a vague roadmap here](https://paper.dropbox.com/doc/oqVRBR64ieA3GUXGXByh8).
 
 
 ## Getting started
