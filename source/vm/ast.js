@@ -55,6 +55,14 @@ const AST = data('furipota:ast', {
     return { items };
   },
 
+  VectorSpread(expression) {
+    return { expression };
+  },
+
+  VectorElement(expression) {
+    return { expression };
+  },
+
   Record(pairs) {
     return { pairs };
   },
@@ -243,6 +251,14 @@ provide(AST, 'prettyPrint', {
 
   Vector(depth) {
     return '[' + this.items.map(x => x.prettyPrint(depth)).join(', ') + ']';
+  },
+
+  VectorSpread(depth) {
+    return `...${this.expression.prettyPrint(depth)}`;
+  },
+
+  VectorElement(depth) {
+    return this.expression.prettyPrint(depth);
   },
 
   Record(depth) {

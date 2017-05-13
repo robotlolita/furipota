@@ -104,8 +104,11 @@ ometa FuripotaParser {
 
   Vector = '[' ws ']'
            -> ast.Vector([])
-         | '[' ws expression:a (ws ',' ws expression)*:as ws ']'
+         | '[' ws vectorExpression:a (ws ',' ws vectorExpression)*:as ws ']'
            -> ast.Vector([a].concat(as)),
+
+  vectorExpression = seq('...') expression:e -> ast.VectorSpread(e)
+                   | expression:e            -> ast.VectorElement(e),
 
   Record = recordPair:a (ws recordPair)*:xs
            -> ast.Record([a].concat(xs)),
