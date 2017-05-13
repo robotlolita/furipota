@@ -22,12 +22,12 @@ define ometa path @ options = do
 
 define parents path =
   if Path.is-root path then
-    Stream.of path
+    [path]
   else
-    Stream.concatenate [Stream.of path, (parents (Path.directory path))]
+    [path, ...parents (Path.directory path)]
 
 define find-upwards from pattern =
-  parents from
+  Stream.from-vector (parents from)
     |> (base -> find pattern @ -base-directory: base  -return-absolute-paths: true)
 
 
