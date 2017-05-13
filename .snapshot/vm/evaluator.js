@@ -142,7 +142,17 @@ function evaluate(ast, originalContext) {
     
     // --[ Complex values ]--------------------------------------------
     Vector: ({ items }) => {
-      return items.map(x => evaluate(x, ctx))
+      return flatten(items.map(x => evaluate(x, ctx)))
+    },
+
+    VectorSpread: ({ expression }) => {
+      const result = evaluate(expression, ctx);
+      ctx.assertType('Vector', result);
+      return result;
+    },
+
+    VectorElement: ({ expression }) => {
+      return [evaluate(expression, ctx)];
     },
 
     Record: ({ pairs }) => {
