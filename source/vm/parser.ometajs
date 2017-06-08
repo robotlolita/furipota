@@ -42,7 +42,8 @@ ometa FuripotaParser {
   sws     = ignored+,
   kw :xs  = seq(xs) ~(letter | digit | '-' | ':'),
   idStart = letter,
-  idRest  = (letter | digit | '-'),
+  idRest  = letter | digit | '-',
+  kwRest  = idRest | '_' | infix,
   eof     = ~char,
 
   octDigits = /[0-7][0-7_]*/:a             -> a.replace(/_/g, ''),
@@ -69,10 +70,10 @@ ometa FuripotaParser {
   Identifier = <idStart idRest*>:a ?isValid(a)
                -> ast.Identifier(a),
 
-  Keyword = '-' <idStart idRest*>:a ':'
+  Keyword = '-' symbol:a ':'
             -> ast.Keyword(a),
 
-  symbol = <(letter | digit | '-' | infix)+>,
+  symbol = <(letter | digit | '-' | '_' | infix)+>,
 
   infix = (seq('===') | seq('=/=') | '>' | seq('>=') | seq('<') | seq('<=') | '+' | '-' | '*' | '/'):a
           -> ast.Identifier(a),
@@ -113,8 +114,8 @@ ometa FuripotaParser {
   Record = recordPair:a (ws recordPair)*:xs
            -> ast.Record([a].concat(xs)),
 
-  recordPair = '-' Identifier:a (ws Identifier)+:as ws seq('->') ws recordExpression:v
-               -> [ast.Keyword(a.name), makeLambda(as.concat(ast.Identifier('_')), v)]
+  recordPair = '-' symbol:a (ws Identifier)+:as ws seq('->') ws recordExpression:v
+               -> [ast.Keyword(a), makeLambda(as.concat(ast.Identifier('_')), v)]
              | Keyword:k ws recordExpression:v 
                -> [k, v],
 
