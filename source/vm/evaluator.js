@@ -329,7 +329,7 @@ function evaluate(ast, originalContext) {
       }
       ctx.traceExpression(command).assertType('^Path', commandValue);
 
-      return shell(commandValue, flatten(argsValue), options);
+      return shell(commandValue, flatten(argsValue), evaluate(options, ctx));
     },
 
     ShellSymbol: ({ symbol }) => {
