@@ -76,7 +76,7 @@ function show(ctx, x) {
     'Boolean': (x) => String(x),
     'Number':  (x) => String(x),
     'Text':    (x) => x,
-    'Vector':  (x) => `[${x.map(show).join(', ')}]`,
+    'Vector':  (x) => `[${x.map((v) => show(ctx, v)).join(', ')}]`,
     '^Path':   (x) => pathToText(x),
     '^Shell-stderr':    (x) => x.value,
     '^Shell-error':     (x) => x.value.stack,
