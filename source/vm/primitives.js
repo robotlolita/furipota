@@ -164,7 +164,7 @@ function shell(command, args, options) {
     });
 
     child.on('error', async (error) => {
-      await producer.pushError(tagged('Shell-error'));
+      await producer.pushError(tagged('Shell-error', { stack: error.stack, name: error.name, message: error.message }));
       await producer.close();
     });
   });
