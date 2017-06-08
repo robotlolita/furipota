@@ -43,6 +43,12 @@ module.exports = (furipota) => {
     'empty':
     nativeThunk('empty', 'Constructs an empty record',
       (ctx) => ({})
+    ),
+
+    'keys':
+    native('keys', [['Record'], {}],
+      'Returns the keys present in a record as a vector',
+      (ctx, record, _options) => Object.keys(record)
     )
   });
 };
