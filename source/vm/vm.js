@@ -20,6 +20,7 @@ const AST = require('./ast');
 const Parser = require('./parser').FuripotaParser;
 const CoreModules = require('./core-library');
 const Plugins = require('./plugins');
+const compile = require('./passes');
 
 
 function readAsText(path) {
@@ -53,7 +54,7 @@ class FuripotaVM {
   }
 
   evaluate(ast, context) {
-    return evaluate(ast, context);
+    return evaluate(compile(ast), context);
   }
 
   loadModule(file, kind) {

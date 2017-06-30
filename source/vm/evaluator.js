@@ -112,6 +112,10 @@ function evaluate(ast, originalContext) {
     Identifier: ({ name }) =>
       name,
 
+    Hole: () => {
+      ctx.assert(false, `Application hole not removed during desugaring phase. This is probably an error in the FuriPota VM.`);
+    },
+
     Keyword: ({ name }) =>
       name,
 
@@ -224,37 +228,6 @@ function evaluate(ast, originalContext) {
       ctx.traceExpression(callee).assertType('Invokable', fn);
 
       return fn.invoke(ctx, inputValue, optionsValue);
-    },
-
-    Prefix: ({ operator, expression }) => {
-      const fn = evaluate(operator, ctx);
-      const exprValue = evaluate(expression, ctx);
-      ctx.traceExpression(operator).assertType('Invokable', fn);
-
-      return fn.invoke(ctx, exprValue, {});
-    },
-
-    Infix: ({ operator, left, right }) => {
-      const fn = evaluate(operator, ctx);
-      const leftValue = evaluate(left, ctx);
-      const rightValue = evaluate(right, ctx);
-      ctx.traceExpression(operator).assertType('Invokable', fn);
-
-      const fn2 = fn.invoke(ctx, rightValue, {});
-      ctx.assertType('Invokable', fn2);
-
-      return fn2.invoke(ctx, leftValue, {});
-    },
-
-    Partial: ({ callee, options }) => {
-      const calleeValue = evaluate(callee, ctx);
-      ctx.traceExpression(callee).assertType('Invokable', calleeValue);
-
-      return new Partial(
-        ctx,
-        calleeValue,
-        evaluate(options, ctx)
-      );
     },
 
     Pipe: ({ input, transformation }) => {

@@ -19,6 +19,10 @@ const AST = data('furipota:ast', {
     return { name };
   },
 
+  Hole() {
+    return { };
+  },
+
   Keyword(name) {
     return { name };
   },
@@ -99,10 +103,6 @@ const AST = data('furipota:ast', {
   // --[ Expressions ]--------------------------------------------------
   Invoke(callee, input, options) {
     return { callee, input, options };
-  },
-
-  Partial(callee, options) {
-    return { callee, options };
   },
 
   Pipe(input, transformation) {

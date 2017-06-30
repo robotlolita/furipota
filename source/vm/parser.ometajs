@@ -78,6 +78,8 @@ ometa FuripotaParser {
   infix = (seq('===') | seq('=/=') | '>' | seq('>=') | seq('<') | seq('<=') | '+' | '-' | '*' | '/'):a
           -> ast.Identifier(a),
 
+  Hole = '_' -> ast.Hole(),
+
 
   // --[ Values ]
   value = Boolean | Number | Text | Vector | Record | Lambda | Tagged,
@@ -234,8 +236,6 @@ ometa FuripotaParser {
 
   Invoke = Invoke:i ws memberExpression:v (ws '@' ws Record)?:r
            -> ast.Invoke(i, v, r || ast.Record([]))
-         | Invoke:i ws '_' (ws '@' ws Record)?:r
-           -> ast.Partial(i, r || ast.Record([]))
          | memberExpression,
 
   memberExpression = memberExpression:m ws '.' ws Identifier:i
@@ -257,6 +257,7 @@ ometa FuripotaParser {
                    | Vector
                    | Tagged
                    | Shell
+                   | Hole
                    | Identifier:i               -> ast.Variable(i)
                    | '(' ws expression:a ws ')' -> a,
 
