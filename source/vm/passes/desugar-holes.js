@@ -60,7 +60,7 @@ const collectOptionHoles = (bindings, options) => {
 
   const [holes, pairs] = options.pairs.reduce(
     ([holes, pairs], [key, value]) => {
-      const [newHoles, newValue] = collectHole(value);
+      const [newHoles, newValue] = collectHole(bindings, value);
       return [
         [...holes, ...newHoles], 
         [...pairs, [key, newValue]]
