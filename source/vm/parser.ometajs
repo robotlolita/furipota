@@ -219,15 +219,15 @@ ometa FuripotaParser {
                         -> ast.Get(a, ast.Identifier(i)),
 
   Relational = Relational:a ws (seq('===') | seq('=/=') | '>' | seq('>=') | '<' | seq('<=')):o ws Add:b
-               -> ast.Infix(ast.Variable(ast.Identifier(o)), b, a)
+               -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
              | Add,
   
   Add = Add:a ws ('+' | '-'):o ws Multiply:b
-        -> ast.Infix(ast.Variable(ast.Identifier(o)), b, a)
+        -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
       | Multiply,
 
   Multiply = Multiply:a ws ('*' | '/'):o sws Unary:b
-             -> ast.Infix(ast.Variable(ast.Identifier(o)), b, a)
+             -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
            | Unary,
 
   Unary = kw('not') ws Invoke:e
