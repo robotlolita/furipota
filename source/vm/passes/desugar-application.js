@@ -141,7 +141,7 @@ const desugarApplication = (node) =>
       ast.DoReturn(desugarApplication(expression)),
 
     DoBind: ({ id, expression }) =>
-      ast.DoBind(desugarApplication(id, expression)),
+      ast.DoBind(id, desugarApplication(expression)),
 
     DoLet: ({ id, expression }) =>
       ast.DoLet(id, expression),
