@@ -8,9 +8,14 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, tagged } = furipota.primitives;
+  const { nativeModule, native, nativeThunk, tagged, unit } = furipota.primitives;
 
   return nativeModule('core:core', {
+    unit:
+    nativeThunk('unit', 'Represents the no value', 
+      (ctx) => unit
+    ),
+
     match:
     native('match', [['Any'], {_: 'Invokable'}],
       'matches a tagged value to its appropriate handler',

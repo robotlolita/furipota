@@ -13,7 +13,7 @@ const needsParenthesis = (ast) =>
   ![
     AST.Identifier, AST.Keyword, AST.Text, AST.Integer, AST.Decimal, 
     AST.Boolean, AST.Record, AST.Vector, AST.Variable, AST.Shell,
-    AST.Get
+    AST.Get, AST.Hole
   ].some(
     x => x.hasInstance(ast)
   );
@@ -32,6 +32,10 @@ const prettyPrint = (node, depth = 0) => {
 
     Identifier: ({ name }) => {
       return name;
+    },
+
+    Hole: () => {
+      return '_';
     },
 
     Keyword: ({ name }) => {
@@ -112,10 +116,6 @@ const prettyPrint = (node, depth = 0) => {
 
     Invoke: ({ callee, input, options }) => {
       return p(callee, depth) + ' ' + p(input, depth) + ' ' + prettyPrint(options, depth); 
-    },
-
-    Partial: ({ callee, options }) => {
-      return p(callee, depth) + ' _ ' + prettyPrint(options, depth);
     },
 
     Pipe: ({ input, transformation }) => {
