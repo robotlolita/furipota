@@ -9,6 +9,7 @@
 
 const { data } = require('folktale/core/adt');
 const chalk = require('chalk');
+const prettyPrint = require('./pretty-print');
 
 const TraceEntry = data('furipota:tracing:type', {
   Expression(module, node) {
@@ -60,7 +61,7 @@ class Trace {
           `at ${chalk.blue(name)} in ${chalk.green(module.fileName)}`,
 
         Expression: ({ module, node }) =>
-          `in ${chalk.green(module.fileName)}\n  : ${chalk.gray(node.prettyPrint(4).split(/\r|\n/)[0])}`
+          `in ${chalk.green(module.fileName)}\n  : ${chalk.gray(prettyPrint(node, 4).split(/\r|\n/)[0])}`
       });
     })
   }

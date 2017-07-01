@@ -76,7 +76,7 @@ function show(ctx, x) {
     'Boolean': (x) => String(x),
     'Number':  (x) => String(x),
     'Text':    (x) => x,
-    'Vector':  (x) => `[${x.map(show).join(', ')}]`,
+    'Vector':  (x) => `[${x.map((v) => show(ctx, v)).join(', ')}]`,
     '^Path':   (x) => pathToText(x),
     '^Shell-stderr':    (x) => x.value,
     '^Shell-error':     (x) => x.value.stack,
@@ -124,7 +124,7 @@ function shell(command, args, options) {
   return stream(async (producer) => {
     const child = spawn(pathToText(command), normalisedArgs, compact({
       cwd: options['working-directory'] ? pathToText(options['working-directory']) : null,
-      env: options.environment,
+      env: Object.assign({}, process.env, options.environment),
       uid: options['user-id'],
       gid: options['group-id']
     }));
@@ -164,7 +164,7 @@ function shell(command, args, options) {
     });
 
     child.on('error', async (error) => {
-      await producer.pushError(tagged('Shell-error'));
+      await producer.pushError(tagged('Shell-error', { stack: error.stack, name: error.name, message: error.message }));
       await producer.close();
     });
   });

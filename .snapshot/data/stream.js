@@ -16,7 +16,8 @@ class Stream {
 
   willMatchWith(pattern) {
     return new Stream(async (producer) => {
-      let pending = [];
+      let pending = [this];
+      const baseStream = this;
       const maybeClose = (x) => async () => {
         pending = pending.filter(a => a !== x);
         if (!pending.length) {
@@ -56,10 +57,10 @@ class Stream {
           });
           pending.push(stream);
           await stream.run();
+          await maybeClose(baseStream)();
         }
       });
       
-      pending.push(this);
       await this.run();
     });
   }
@@ -138,10 +139,10 @@ class Stream {
       let errored = false;
 
       this.subscribe({
-        Value: (x) => {},
+        Value: (x) => { },
         Error: async (e) => {
           errored = true;
-          await producer.pushValue(e);
+          await producer.pushError(e);
           await producer.close();
         },
 
