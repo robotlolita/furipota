@@ -114,7 +114,7 @@ const desugarApplication = (node) =>
       ),
 
     Prefix: ({ operator, expression }) =>
-      ast.Invoke(operator, desugarApplication(expression)),
+      ast.Invoke(operator, desugarApplication(expression), ast.Record([])),
 
     Shell: ({ command, args, options }) =>
       ast.Shell(desugarApplication(command), args.map(desugarApplication), desugarApplication(options)),
