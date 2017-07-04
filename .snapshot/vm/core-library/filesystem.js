@@ -12,7 +12,7 @@ module.exports = (furipota) => {
   const fsw = require('../../wrappers/fs');
   const { compact } = require('../../utils');
   const fs = require('fs');
-  const Maybe = require('folktale/data/maybe');
+  const Maybe = require('folktale/maybe');
 
 
   return nativeModule('core:filesystem', {

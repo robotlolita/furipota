@@ -3,7 +3,7 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
-const Result = require('folktale/data/result');
+const Result = require('folktale/result');
 const diff = require('deep-diff').diff;
 
 const ast = require('../../furipota/vm/ast');

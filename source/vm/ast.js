@@ -7,9 +7,9 @@
 //
 //----------------------------------------------------------------------
 
-const { data, derivations } = require('folktale/core/adt');
+const { union, derivations } = require('folktale/adt/union');
 
-const AST = data('furipota:ast', {
+const AST = union('furipota:ast', {
   Seq(items) {
     return { items };
   },

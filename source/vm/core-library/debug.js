@@ -15,7 +15,7 @@ module.exports = (furipota) => {
   const moment = require('moment');
   const chalk = require('chalk');
   const extend = require('xtend');
-  const Maybe = require('folktale/data/maybe');
+  const Maybe = require('folktale/maybe');
 
 
   function show(options, kind, data) {

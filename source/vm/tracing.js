@@ -7,11 +7,11 @@
 //
 //----------------------------------------------------------------------
 
-const { data } = require('folktale/core/adt');
+const { union } = require('folktale/adt/union');
 const chalk = require('chalk');
 const prettyPrint = require('./pretty-print');
 
-const TraceEntry = data('furipota:tracing:type', {
+const TraceEntry = union('furipota:tracing:type', {
   Expression(module, node) {
     return { module, node };
   },
