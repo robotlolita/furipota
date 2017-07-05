@@ -90,8 +90,45 @@ const prettyPrint = (node, depth = 0) => {
       return `${prettyPrint(value, depth)} @${prettyPrint(options, depth)} -> ${prettyPrint(expression, depth)}`
     },
 
-    Tagged: ({ tag, value }) => {
-      return `^${prettyPrint(tag, depth)} ${p(value, depth)}`;
+    Tagged: ({ tag, predicates }) => {
+      return `^${prettyPrint(tag, depth)} ${predicates.map(x => p(x, depth))}`;
+    },
+
+    Match: ({ expression, cases }) => {
+      const pad = ' '.repeat(depth + 2);
+      return `match ${prettyPrint(expression, depth)} with\n${pad}${cases.map(x => prettyPrint(x, depth + 2)).join('\n' + pad)}`;
+    },
+
+    MatchCase: ({ pattern, expression }) => {
+      return `case ${prettyPrint(pattern, depth)} then ${p(expression, depth)}`;
+    },
+
+    MatchBind: ({ identifier }) => {
+      return `let ${prettyPrint(identifier, depth)}`;
+    },
+
+    MatchEquals: ({ expression }) => {
+      return p(expression, depth);
+    },
+
+    MatchTagged: ({ tag, patterns }) => {
+      return `^${p(tag, depth)} ${patterns.map(x => p(x, depth)).join(' ')}`;
+    },
+
+    MatchVector: ({ items }) => {
+      return `[${items.map(x => p(x, depth)).join(', ')}]`;
+    },
+
+    MatchVectorSpread: ({ pattern }) => {
+      return `...${prettyPrint(pattern, depth)}`;
+    },
+
+    MatchVectorElement: ({ pattern }) => {
+      return prettyPrint(pattern, depth);
+    },
+
+    MatchAny: () => {
+      return '_';
     },
 
     Define: ({ id, expression }) => {

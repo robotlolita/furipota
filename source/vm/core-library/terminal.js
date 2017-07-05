@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, unit, Stream } = furipota.primitives;
+  const { nativeModule, native, unit, Stream, TShellOutput, TShellErrorOutput } = furipota.primitives;
 
   return nativeModule('core:terminal', {
     show:
@@ -17,11 +17,13 @@ module.exports = (furipota) => {
       (ctx, stream, _options) => {
         stream.subscribe({
           Value: async (x) => {
-            ctx.assertType('Text | Buffer', x);
-            process.stdout.write(x)
+            ctx.assertType([TShellOutput, TShellErrorOutput], x);
+            const value = x.values[0];
+            ctx.assertType(['Text', 'Buffer'], value);
+            process.stdout.write(value);
           },
           Error: (x) => {
-            ctx.assertType('Text | Buffer', x);
+            ctx.assertType(['Text', 'Buffer'], x);
             process.stderr.write(x)
           },
           Close: () => {}

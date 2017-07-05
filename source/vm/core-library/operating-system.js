@@ -8,7 +8,10 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, nativeThunk, textToPath, shell } = furipota.primitives;
+  const { 
+    nativeModule, native, nativeThunk, textToPath, TPath, shell,
+    TShellError, TShellExitCode, TShellOutput, TShellErrorOutput
+  } = furipota.primitives;
 
   return nativeModule('core:operating-system', {
     'current-directory':
@@ -22,8 +25,8 @@ module.exports = (furipota) => {
     ),
 
     'run':
-    native('run', [['^Path', 'Vector'], {
-        'working-directory?': '^Path',
+    native('run', [[TPath, 'Vector'], {
+        'working-directory?': TPath,
         'environment?': 'Record',
         'user-id?': 'Number',
         'group-id?': 'Number'
@@ -32,6 +35,28 @@ module.exports = (furipota) => {
       (ctx, command, args, options) => {
         return shell(command, args, options);
       }
-    )
+    ),
+
+    'Shell': {
+      'Error':
+      nativeThunk('Shell-Error', 'represents errors in shell',
+        (ctx) => TShellError
+      ),
+
+      'Exit-Code':
+      nativeThunk('Shell-Exit-Code', 'represents exit codes in shell',
+        (ctx) => TShellExitCode
+      ),
+
+      'Output':
+      nativeThunk('Shell-Output', 'represents output streams in shell',
+        (ctx) => TShellOutput
+      ),
+
+      'Error-Output':
+      nativeThunk('Shell-Error-Output', 'represents error output streams in shell',
+        (ctx) => TShellErrorOutput
+      )
+    }
   });
 };

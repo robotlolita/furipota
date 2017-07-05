@@ -10,7 +10,7 @@
 const ast = require('../ast');
 
 
-const desugarApplication = (node) =>
+const desugarApplication = (node) => 
   node.matchWith({
     Seq: ({ items }) =>
       ast.Seq(items.map(desugarApplication)),
@@ -62,8 +62,38 @@ const desugarApplication = (node) =>
     Lambda: ({ value, options, expression }) =>
       ast.Lambda(value, options, desugarApplication(expression)),
 
-    Tagged: ({ tag, value }) =>
-      ast.Tagged(tag, desugarApplication(value)),
+    Tagged: ({ tag, predicates }) =>
+      ast.Tagged(tag, predicates.map(desugarApplication)),
+
+    Match: ({ expression, cases }) =>
+      ast.Match(
+        desugarApplication(expression),
+        cases.map(desugarApplication)
+      ),
+
+    MatchCase: ({ pattern, expression }) =>
+      ast.MatchCase(desugarApplication(pattern), desugarApplication(expression)),
+
+    MatchBind: ({ identifier }) =>
+      ast.MatchBind(identifier),
+
+    MatchEquals: ({ expression }) =>
+      ast.MatchEquals(desugarApplication(expression)),
+
+    MatchTagged: ({ tag, patterns }) =>
+      ast.MatchTagged(desugarApplication(tag), patterns.map(desugarApplication)),
+
+    MatchVector: ({ items }) =>
+      ast.MatchVector(items.map(desugarApplication)),
+
+    MatchVectorSpread: ({ pattern }) =>
+      ast.MatchVectorSpread(desugarApplication(pattern)),
+
+    MatchVectorElement: ({ pattern }) =>
+      ast.MatchVectorElement(desugarApplication(pattern)),
+
+    MatchAny: () => 
+      ast.MatchAny(),
 
     Define: ({ id, expression, documentation }) =>
       ast.Define(id, desugarApplication(expression), documentation),

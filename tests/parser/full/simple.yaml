@@ -2,7 +2,7 @@
 import """core"""
 
 define source = watch """src/*.js"""
-define compile = source |> babel _ @ -output-directory: """lib"""
+define compile = source |> babel
 ---
 result: OK
 ast:
@@ -23,10 +23,5 @@ ast:
     expression:
       !Pipe
       input: !Variable { id: !Identifier source }
-      transformation:
-        !Partial
-        callee: !Variable { id: !Identifier babel }
-        options:
-          !Record
-          - [!Keyword output-directory, !Text lib]
+      transformation: !Variable { id: !Identifier babel }
     documentation: ""

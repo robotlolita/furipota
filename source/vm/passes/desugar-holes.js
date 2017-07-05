@@ -177,8 +177,44 @@ const desugarHoles = (bindings, node) =>
     Lambda: ({ value, options, expression }) =>
       ast.Lambda(value, options, desugarHoles(bindings, expression)),
 
-    Tagged: ({ tag, value }) =>
-      ast.Tagged(tag, desugarHoles(bindings, value)),
+    Tagged: ({ tag, predicates }) =>
+      ast.Tagged(tag, predicates.map(x => desugarHoles(bindings, x))),
+
+    Match: ({ expression, cases }) =>
+      ast.Match(
+        desugarHoles(bindings, expression),
+        cases.map(x => desugarHoles(bindings, x))
+      ),
+
+    MatchCase: ({ pattern, expression }) =>
+      ast.MatchCase(
+        desugarHoles(bindings, pattern),
+        desugarHoles(bindings, expression)
+      ),
+
+    MatchBind: ({ identifier }) =>
+      ast.MatchBind(identifier),
+
+    MatchEquals: ({ expression }) =>
+      ast.MatchEquals(desugarHoles(bindings, expression)),
+
+    MatchTagged: ({ tag, patterns }) =>
+      ast.MatchTagged(
+        desugarHoles(bindings, tag),
+        patterns.map(x => desugarHoles(bindings, x))
+      ),
+
+    MatchVector: ({ items }) =>
+      ast.MatchVector(items.map(x => desugarHoles(bindings, x))),
+
+    MatchVectorSpread: ({ pattern }) =>
+      ast.MatchVectorSpread(desugarHoles(bindings, pattern)),
+
+    MatchVectorElement: ({ pattern }) =>
+      ast.MatchVectorElement(desugarHoles(bindings, pattern)),
+
+    MatchAny: () => 
+      ast.MatchAny(),
 
     Define: ({ id, expression, documentation }) =>
       ast.Define(id, desugarHoles(bindings, expression), documentation),

@@ -7,7 +7,7 @@
 //
 //----------------------------------------------------------------------
 
-const { Primitive, Partial, Lambda, NativeThunk, Thunk, Tagged } = require('./intrinsics');
+const { Primitive, Lambda, NativeThunk, Thunk, Tagged, Variant } = require('./intrinsics');
 const Stream = require('../data/stream');
 const protoOf = Object.getPrototypeOf;
 const internalClass = Function.call.bind(Object.prototype.toString);
@@ -39,24 +39,28 @@ function getType(x) {
   :      typeof x === 'string'    ?  'Text'
   :      Array.isArray(x)         ?  'Vector'
   :      x instanceof Primitive   ?  'Primitive'
-  :      x instanceof Partial     ?  'Partial'
   :      x instanceof Lambda      ?  'Lambda'
   :      x instanceof NativeThunk ?  'Thunk'
   :      x instanceof Thunk       ?  'Thunk'
   :      x instanceof Buffer      ?  'Buffer'
   :      x instanceof Stream      ?  'Stream'
-  :      x instanceof Tagged      ?  `^${x.tag}`
+  :      x instanceof Tagged      ?  `^${x.tag.tag} instance`
+  :      x instanceof Variant     ?  `^${x.tag}`
   :      isPlainObject(x)         ?  'Record'
   :      /* else */                  `Unknown Type (JS ${classOf(x)})`;
 }
 
 function typeMatches(type, value) {
-  if (/\|/.test(type)) {
-    return type.split('|').map(x => x.trim()).some(t => typeMatches(t, value));
+  if (Array.isArray(type)) {
+    return type.some(t => typeMatches(t, value));
+  } else if (type instanceof Variant) {
+    return type.hasInstance(value);
   } else if (type === 'Any') {
     return !/^Unknown Type/.test(getType(value));
   } else if (type === 'Invokable') {
-    return ['Primitive', 'Partial', 'Lambda', 'Thunk'].includes(getType(value));
+    return ['Primitive', 'Lambda', 'Thunk'].includes(getType(value));
+  } else if (type === 'Variant') {
+    return value instanceof Variant;
   } else {
     return getType(value) === type;
   }

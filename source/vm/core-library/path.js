@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, tagged, pathToText, textToPath, typeMatches } = furipota.primitives;
+  const { nativeModule, native, pathToText, textToPath, typeMatches, TPath } = furipota.primitives;
   const Path = require('path');
 
   return nativeModule('core:path', {
@@ -21,7 +21,7 @@ module.exports = (furipota) => {
     ),
 
     'to-text':
-    native('to-text', [['^Path'], {}],
+    native('to-text', [[TPath], {}],
       'converts a filesystem path to a piece of text',
       (ctx, path, _options) => {
         return pathToText(path);
@@ -29,7 +29,7 @@ module.exports = (furipota) => {
     ),
 
     'is-root':
-    native('is-root', [['^Path'], {}],
+    native('is-root', [[TPath], {}],
       'tests if a path is a root path',
       (ctx, path, _options) => {
         const data = Path.parse(pathToText(path));
@@ -38,7 +38,7 @@ module.exports = (furipota) => {
     ),
 
     'is-relative':
-    native('is-relative', [['^Path'], {}],
+    native('is-relative', [[TPath], {}],
       'tests if a path is a relative path',
       (ctx, path, _options) => {
         return !Path.isAbsolute(pathToText(path));
@@ -46,7 +46,7 @@ module.exports = (furipota) => {
     ),
 
     'is-absolute':
-    native('is-absolute', [['^Path'], {}],
+    native('is-absolute', [[TPath], {}],
       'tests if a path is an absolute path',
       (ctx, path, _options) => {
         return Path.isAbsolute(pathToText(path));
@@ -62,7 +62,7 @@ module.exports = (furipota) => {
     ),
 
     relative:
-    native('relative', [['^Path'], { to: '^Path' }],
+    native('relative', [[TPath], { to: TPath }],
       'returns a path relative to the destination',
       (ctx, from, { to }) => {
         return textToPath(Path.relative(...[from, to].map(pathToText)));
@@ -70,7 +70,7 @@ module.exports = (furipota) => {
     ),
 
     directory:
-    native('directory', [['^Path'], {}],
+    native('directory', [[TPath], {}],
       'returns the directory portion of a path',
       (ctx, path, _options) => {
         return textToPath(Path.dirname(pathToText(path)));
@@ -78,7 +78,7 @@ module.exports = (furipota) => {
     ),
 
     normalize:
-    native('normalize', [['^Path'], {}],
+    native('normalize', [[TPath], {}],
       'returns a normalised version of a path',
       (ctx, path, _options) => {
         return textToPath(Path.normalize(pathToText(path)));
@@ -86,7 +86,7 @@ module.exports = (furipota) => {
     ),
 
     'change-extension':
-    native('change-extension', [['Text', '^Path'], {}],
+    native('change-extension', [['Text', TPath], {}],
       'changes the extension portion of a path',
       (ctx, extension, path, _options) => {
         ctx.assert(/^\./.test(extension) && !extension.includes(Path.separator), `Invalid file extension ${extension}.`);
@@ -98,10 +98,10 @@ module.exports = (furipota) => {
     ),
 
     '/':
-    native('/', [['^Path', 'Any'], {}],
+    native('/', [[TPath, 'Any'], {}],
       'joins paths and segments',
       (ctx, base, segment, _options) => {
-        if (typeMatches('^Path', segment)) {
+        if (typeMatches(TPath, segment)) {
           return textToPath(Path.join(...[base, segment].map(pathToText)));
         } else if (typeMatches('Text', segment) && !segment.includes(Path.separator)) {
           return textToPath(Path.join(pathToText(base), segment));

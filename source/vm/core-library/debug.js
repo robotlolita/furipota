@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, tagged, Stream } = furipota.primitives;
+  const { nativeModule, native, Stream } = furipota.primitives;
 
   const { inspect } = require('util');
   const { compact } = require('../../utils');

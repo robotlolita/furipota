@@ -8,17 +8,19 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, nativeThunk, tagged, stream, textToPath, pathToText } = furipota.primitives;
+  const { nativeModule, native, nativeThunk, stream, textToPath, pathToText, variant, tagged, TPath, isString } = furipota.primitives;
   const fsw = require('../../wrappers/fs');
   const { compact } = require('../../utils');
   const fs = require('fs');
   const Maybe = require('folktale/maybe');
 
+  const TEncoding = variant('Encoding', [isString]);
+
 
   return nativeModule('core:filesystem', {
     find:
-    native('find', [['^Path'], {
-        'base-directory?': '^Path',
+    native('find', [[TPath], {
+        'base-directory?': TPath,
         'silent?': 'Boolean',
         'strict?': 'Boolean',
         'match-directories?': 'Boolean',
@@ -55,7 +57,7 @@ module.exports = (furipota) => {
     ),
 
     'make-directory':
-    native('make-directory', [['^Path'], { 'mode?': 'Number' }],
+    native('make-directory', [[TPath], { 'mode?': 'Number' }],
       'creates a path in a file system',
       (ctx, path, { mode }) => {
         return stream(async (producer) => {
@@ -72,7 +74,7 @@ module.exports = (furipota) => {
     ),
 
     'remove':
-    native('remove', [['^Path'], {}],
+    native('remove', [[TPath], {}],
       'removes a path from the file system',
       (ctx, path, options) => {
         return stream(async (producer) => {
@@ -88,7 +90,7 @@ module.exports = (furipota) => {
     ),
 
     'copy':
-    native('copy', [['^Path'], { to: '^Path', 'overwrite?': 'Boolean' }],
+    native('copy', [[TPath], { to: TPath, 'overwrite?': 'Boolean' }],
       'copies a tree to another destination',
       (ctx, path, { to, overwrite }) => {
         return stream(async (producer) => {
@@ -105,7 +107,7 @@ module.exports = (furipota) => {
     ),
 
     'list-directory':
-    native('list-directory', [['^Path'], {}],
+    native('list-directory', [[TPath], {}],
       'lists the immediate contents of a directory',
       (ctx, path, _options) => {
         return stream(async (producer) => {
@@ -122,7 +124,7 @@ module.exports = (furipota) => {
     ),
 
     'exists':
-    native('exists', [['^Path'], {}],
+    native('exists', [[TPath], {}],
       'checks if a path exists',
       (ctx, path, _options) => {
         return fs.existsSync(pathToText(path));
@@ -130,8 +132,8 @@ module.exports = (furipota) => {
     ),
 
     'read':
-    native('read', [['^Path'], {
-        'encoding?': '^Encoding',
+    native('read', [[TPath], {
+        'encoding?': TEncoding,
         'mode?': 'Number',
         'start-at-byte?': 'Number',
         'end-at-byte?': 'Number'
@@ -170,8 +172,8 @@ module.exports = (furipota) => {
     ),
 
     'write':
-    native('write', [['^Path', 'Stream'], {
-        'default-encoding?': '^Encoding',
+    native('write', [[TPath, 'Stream'], {
+        'default-encoding?': TEncoding,
         'mode': 'Number',
         'start-at-byte': 'Number'
       }],
@@ -216,7 +218,7 @@ module.exports = (furipota) => {
     ),
 
     'symbolic-link':
-    native('symbolic-link', [['^Path'], { to: '^Path' }],
+    native('symbolic-link', [[TPath], { to: TPath }],
       'creates a symbolic link',
       (ctx, from, { to }) => {
         return stream(async (producer) => {
@@ -232,7 +234,7 @@ module.exports = (furipota) => {
     ),
 
     'unlink':
-    native('unlink', [['^Path'], {}],
+    native('unlink', [[TPath], {}],
       'removes a symbolic link',
       (ctx, path, _options) => {
         return stream(async (producer) => {
@@ -249,27 +251,27 @@ module.exports = (furipota) => {
 
     'Encoding': {
       'utf-8': nativeThunk('utf-8', 'an encoding for multibyte encoded Unicode characters', 
-        (ctx) => tagged('Encoding', {_: 'utf8'})
+        (ctx) => tagged(TEncoding, ['utf8'])
       ),
 
       'ascii': nativeThunk('ascii', 'an encoding for 7-bit ASCII data only',
-        (ctx) => tagged('Encoding', {_: 'ascii'})
+        (ctx) => tagged(TEncoding, ['ascii'])
       ),
 
       'utf-16-little-endian': nativeThunk('utf-16-little-endian', '2 or 4 bytes, little-endian encoded Unicode characters',
-        (ctx) => tagged('Encoding', {_: 'utf16le'})
+        (ctx) => tagged(TEncoding, ['utf16le'])
       ),
 
       'base64': nativeThunk('base64', 'an encoding in base 64',
-        (ctx) => tagged('Encoding', {_: 'base64'})
+        (ctx) => tagged(TEncoding, ['base64'])
       ),
 
       'latin1': nativeThunk('latin1', 'a way of encoding th Buffer into a one-byte encoded string',
-        (ctx) => tagged('Encoding', {_: 'latin1'})
+        (ctx) => tagged(TEncoding, ['latin1'])
       ),
 
       'hex': nativeThunk('hex', 'encode each byte as two hexadecimal characters',
-        (ctx) => tagged('Encoding', {_: 'hex'})
+        (ctx) => tagged(TEncoding, ['hex'])
       )
     }
   });

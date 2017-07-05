@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, tagged } = furipota.primitives;
+  const { nativeModule, native } = furipota.primitives;
 
   return nativeModule('core:text', {
     concatenate:

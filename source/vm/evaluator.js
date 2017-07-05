@@ -8,8 +8,9 @@
 //----------------------------------------------------------------------
 
 const { fromPairs } = require('folktale/core/object');
-const { Primitive, Partial, Lambda, NativeThunk, Thunk, Tagged } = require('./intrinsics');
-const { pathToText, textToPath, shell, tagged, show, unit, Stream } = require('./primitives');
+const Maybe = require('folktale/maybe');
+const { Primitive, Lambda, NativeThunk, Thunk, Tagged, Variant } = require('./intrinsics');
+const { pathToText, textToPath, shell, show, unit, Stream, TPath } = require('./primitives');
 const AST = require('./ast');
 
 
@@ -30,6 +31,7 @@ function last(xs) {
 function flatten(xss) {
   return xss.reduce((a, b) => a.concat(b), []);
 }
+
 
 
 // The do-language instruction interpreter
@@ -99,6 +101,109 @@ function evaluateDo(instructions, originalContext) {
 }
 
 
+// The match-language interpreter
+function evaluateMatch(value, cases, ctx) {
+  ctx.assert(cases.length > 0, `Could not match ${show(ctx, value)} against any of the provided patterns.`);
+  const [current, ...rest] = cases;
+
+  return current.matchWith({
+    MatchCase: ({ pattern, expression }) => {
+      return testPattern(pattern, value, ctx).matchWith({
+        Just: ({ value: bindings }) => {
+          return evaluate(expression, ctx.traceExpression(current).extendEnvironment(bindings));
+        },
+
+        Nothing: () => {
+          return evaluateMatch(value, rest, ctx);
+        }
+      });
+    }
+  });
+}
+
+
+function testPattern(pattern, value, ctx) {
+  const mergeBindings = (a) => (b) => {
+    const result = Object.assign({}, a);
+    
+    Object.keys(b).forEach(key => {
+      if (key in result) {
+        throw new Error(`Duplicated binding ${key}`);
+      } else {
+        result[key] = b[key];
+      }
+    });
+
+    return result;
+  };
+
+  return pattern.matchWith({
+    MatchBind: ({ identifier }) => {
+      return Maybe.Just({ 
+        [evaluate(identifier, ctx)]: value 
+      });
+    },
+
+    MatchEquals: ({ expression }) => {
+      const otherValue = evaluate(expression, ctx);
+      return value === otherValue ? Maybe.Just({}) : Maybe.Nothing();
+    },
+    
+    MatchTagged: ({ tag, patterns }) => {
+      const tagValue = evaluate(tag, ctx);
+      ctx.assertType('Variant', tagValue);
+
+      if (patterns.length === 0) {
+        return tagValue.hasInstance(value) ?  Maybe.Just({}) : Maybe.Nothing();
+      } else {
+        const maybeParts = tagValue.unapply(value);
+
+        return patterns.reduce(
+          (maybeBindings, pattern) => {
+            return maybeBindings.chain(([[part, ...rest], bindings]) => {
+              return testPattern(pattern, part, ctx)
+                       .map(mergeBindings(bindings))
+                       .map(newBindings => [rest, newBindings]);
+            });
+          },
+          (maybeParts == null || maybeParts.length !== patterns.length) ?  Maybe.Nothing()
+          : /* else */                                                     Maybe.Just([maybeParts, {}])
+        ).map(([_, bindings]) => bindings);
+      }
+    },
+
+    MatchVector: ({ items }) => {
+      return items.reduce(
+        (maybeBindings, vectorPattern) => {
+          return maybeBindings.chain(([xs, bindings]) => {
+            return vectorPattern.matchWith({
+              MatchVectorSpread: ({ pattern }) => {
+                return testPattern(pattern, xs, ctx)
+                         .map(mergeBindings(bindings))
+                         .map(newBindings => [[], newBindings]);
+              },
+
+              MatchVectorElement: ({ pattern }) => {
+                const [x, ...rest] = xs;
+                return testPattern(pattern, x, ctx)
+                         .map(mergeBindings(bindings))
+                         .map(newBindings => [rest, newBindings]);
+              }
+            })
+          });
+        },
+        Array.isArray(value) && value.length >= items.length ?  Maybe.Just([value, {}])
+        : /* else */                                            Maybe.Nothing()
+      ).map(([_, bindings]) => bindings)
+    },
+
+    MatchAny: () => {
+      return Maybe.Just({});
+    }
+  });
+}
+
+
 
 // The main tree-walking interpreter
 function evaluate(ast, originalContext) {
@@ -140,8 +245,22 @@ function evaluate(ast, originalContext) {
     Decimal: ({ sign, integral, decimal, exponent }) =>
       Number(sign + integral + '.' + (decimal || '0') + exponent),
 
-    Tagged: ({ tag, value }) =>
-      tagged(evaluate(tag, ctx), evaluate(value, ctx)),
+    Tagged: ({ tag, predicates }) =>
+      new Variant(
+        evaluate(tag, ctx),
+        predicates.map(x => {
+          const value = evaluate(x, ctx);
+          ctx.traceExpression(x).assertType('Invokable', value);
+          return value;
+        })
+      ),
+
+    
+    // --[ Pattern matching ]------------------------------------------
+    Match: ({ expression, cases }) => {
+      const value = evaluate(expression, ctx);
+      return evaluateMatch(value, cases, ctx);
+    },
 
     
     // --[ Complex values ]--------------------------------------------
@@ -300,7 +419,7 @@ function evaluate(ast, originalContext) {
       if (AST.ShellSymbol.hasInstance(command)) {
         commandValue = textToPath(commandValue);
       }
-      ctx.traceExpression(command).assertType('^Path', commandValue);
+      ctx.traceExpression(command).assertType(TPath, commandValue);
 
       return shell(commandValue, flatten(argsValue), evaluate(options, ctx));
     },
