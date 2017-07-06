@@ -8,22 +8,76 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, nativeThunk, tagged, unit } = furipota.primitives;
+  const { nativeModule, native, nativeThunk, TOk, TError, TUnit, unit, ok, error } = furipota.primitives;
 
   return nativeModule('core:core', {
+    Unit:
+    nativeThunk('Unit', 'Variant for no value',
+      (ctx) => TUnit
+    ),
+
+    Ok:
+    nativeThunk('Ok', 'Variant for successful results',
+      (ctx) => TOk
+    ),
+
+    Error:
+    nativeThunk('Error', 'Variant for failed results',
+      (ctx) => TError
+    ),
+
     unit:
     nativeThunk('unit', 'Represents the no value', 
       (ctx) => unit
     ),
 
-    match:
-    native('match', [['Any'], {_: 'Invokable'}],
-      'matches a tagged value to its appropriate handler',
-      (ctx, value, patterns) => {
-        const method = patterns[value.tag] || patterns['default'];
-        ctx.assertType('Invokable', method);
+    ok:
+    native('ok', [['Any'], {}],
+      'constructs a representation of a succcessful result',
+      (ctx, value, options) => ok(value)
+    ),
 
-        return method.invoke(ctx, value.value, {});
+    error:
+    native('error', [['Any'], {}],
+      'constructs a representation of a failed result',
+      (ctx, value, options) => error(value)
+    ),
+
+    make:
+    native('make', [['Variant', 'Vector'], {}],
+      'constructs a value from a variant',
+      (ctx, variant, values, options) => {
+        return variant.create(ctx, values);
+      }
+    ),
+
+    union:
+    native('union', [['Vector'], {}],
+      'constructs an union module',
+      (ctx, variants, options) => {
+        const result = {};
+        variants.forEach(x => {
+          ctx.assertType('Variant', x);
+          result[x.tag] = x;
+          if (x.predicates.length > 0) {
+            result[x.tag.toLowerCase()] = native(
+              `make-${x.tag}`, 
+              [Array.from({ length: x.predicates.length }, () => 'Any'), {}],
+              `constructs a ${x.tag} instance`,
+              (ctx, ...rest) => {
+                const values = rest.slice(0, -1);
+                return x.create(ctx, values);
+              }
+            );
+          } else {
+            result[x.tag.toLowerCase()] = nativeThunk(
+              `make-${x.tag}`,
+              `constructs a ${x.tag} instance`,
+              (ctx) => x.create(ctx, [])
+            );
+          }
+        });
+        return result;
       }
     ),
 

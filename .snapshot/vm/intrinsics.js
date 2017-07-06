@@ -25,20 +25,6 @@ class Primitive {
 }
 
 
-// Represents a Furipota partial function (fn _)
-class Partial {
-  constructor(context, callee, options) {
-    this.context = context;
-    this.callee = callee;
-    this.options = options;
-  }
-
-  invoke(context, input, _options) {
-    return this.callee.invoke(this.context.traceProcedure('(partial)'), input, this.options);
-  }
-}
-
-
 // Represents a Furipota lambda
 class Lambda {
   constructor(context, expression, valueParam, optionsParam) {
@@ -107,9 +93,56 @@ class Thunk {
 
 // Represents an open variant
 class Tagged {
-  constructor(tag, value) {
+  constructor(tag, values) {
     this.tag = tag;
-    this.value = value;
+    this.values = values;
+  }
+}
+
+
+// Represents a variant constructor
+class Variant {
+  constructor(tag, predicates) {
+    this.tag = tag;
+    this.predicates = predicates;
+  }
+
+
+  unapply(value) {
+    if (this.hasInstance(value)) {
+      return value.values;
+    } else {
+      return null;
+    }
+  }
+
+  hasInstance(value) {
+    return value && value.tag === this;
+  }
+
+  create(context, values) {
+    context.assert(
+      values.length === this.predicates.length,
+      `Error constructing ${this.tag}: The variant accepts exactly ${this.predicates.length} parameters, was given ${values.length}`
+    );
+
+    this.predicates.forEach((predicate, index) => {
+      const nthSuffix = index === 0 ? 'st'
+                      : index === 1 ? 'nd'
+                      : index === 2 ? 'rd'
+                      : /* else */    'nth';
+      context.assertType('Invokable', predicate);
+      context.assert(
+        predicate.invoke(context, values[index], {}),
+        `Error constructing ${this.tag}: The ${index + 1}${nthSuffix} argument is not valid for this structure.`
+      );
+    });
+
+    return new Tagged(this, values);
+  }
+
+  toString() {
+    return `^${this.tag}`;
   }
 }
 
@@ -139,10 +172,10 @@ class Module {
 
 module.exports = {
   Primitive,
-  Partial,
   Lambda,
   NativeThunk,
   Thunk,
   Tagged,
-  Module
+  Module,
+  Variant
 };
