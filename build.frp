@@ -60,10 +60,9 @@ export define build =
 
 export define test =
   # Runs the tests for Furipota VM
-  let show-error e = match e @ 
-        -Shell-error e     -> e.stack
-        -Shell-exit-code e -> "The program exited with code {e}"
-        -Shell-stderr e    -> e
+  let show-error e = match e with
+    case ^Shell.Error e     then e.stack
+    case ^Shell.Exit-Code c then "The program exited with code {e}"
   in do
     bind test <- find (path "tests/**/run.js")
     action Debug.log (Path.to-text (Path.directory test)) @ -prefix: "TEST"

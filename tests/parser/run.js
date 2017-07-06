@@ -64,11 +64,6 @@ const Invoke = new yaml.Type('!Invoke', {
     ast.Invoke(callee, input, options)
 });
 
-const Partial = new yaml.Type('!Partial', {
-  kind: 'mapping',
-  construct: ({ callee, options }) => ast.Partial(callee, options)
-});
-
 const Pipe = new yaml.Type('!Pipe', {
   kind: 'mapping',
   construct: ({ input, transformation, options }) =>
@@ -96,7 +91,6 @@ const FuripotaSchema = yaml.Schema.create([
   Define,
   Import,
   Invoke,
-  Partial,
   Pipe,
   Variable,
   Program,

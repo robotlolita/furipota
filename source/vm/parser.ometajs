@@ -17,7 +17,8 @@ var reserved = [
   'if', 'then', 'else',
   'and', 'or', 'not',
   'default',
-  'do', 'call', 'action', 'bind', 'return'
+  'do', 'call', 'action', 'bind', 'return',
+  'match', 'case', 'with', 'any'
 ];
 
 function isValid(id) {
@@ -128,8 +129,7 @@ ometa FuripotaParser {
   Lambda = (ws Identifier)+:as (ws '@' ws Identifier)?:r ws seq('->') ws expression:e
          -> makeLambda(as.concat([r || ast.Identifier('_')]), e),
 
-  Tagged = '^' Identifier:i ws simpleExpression:e
-           -> ast.Tagged(i, e),
+  Tagged = '^' Identifier:i (ws simpleExpression)*:es -> ast.Tagged(i, es),
 
 
   // --[ Declarations ]
@@ -164,6 +164,7 @@ ometa FuripotaParser {
              | Lambda
              | Let
              | IfThenElse
+             | Match
              | Pipe
              | Do,
 
@@ -260,6 +261,31 @@ ometa FuripotaParser {
                    | Hole
                    | Identifier:i               -> ast.Variable(i)
                    | '(' ws expression:a ws ')' -> a,
+
+  Match = kw('match') ws expression:e ws kw('with') 
+          (ws CaseExpression)+:cs 
+          (ws kw('default') ws expression)?:me 
+       -> ast.Match(e, cs.concat(me ? [ast.MatchCase(ast.MatchAny(), me)] : [])),
+
+  CaseExpression = kw('case') ws CasePattern:p ws kw('then') ws expression:e -> ast.MatchCase(p, e),
+
+  CasePattern = kw('let') ws Identifier:i  -> ast.MatchBind(i)
+              | '^' caseTagged:a           -> ast.MatchTagged(a[0], a[1])
+              | CaseVector:v               -> ast.MatchVector(v)
+              | kw('any')                  -> ast.MatchAny()
+              | simpleExpression:a         -> ast.MatchEquals(a),
+
+  caseTagged = memberExpression:m (ws CasePattern)*:ps -> [m, ps]
+             | Identifier:i (ws CasePattern)*:ps       -> [ast.Variable(i), ps],
+
+  CaseVector = '[' ws ']' -> []
+             | '[' CasePattern:e (ws ',' ws CasePattern)*:es (ws ',' ws caseVectorLast)?:le ']' 
+               -> [e].concat(es).map(ast.MatchVectorElement).concat(le ? [le] : []),
+
+  caseVectorLast = seq('...') kw('let') ws Identifier:i -> ast.MatchVectorSpread(ast.MatchBind(i))
+                 | seq('...') kw('any')                 -> ast.MatchVectorSpread(ast.MatchAny())
+                 | CasePattern:p                        -> ast.MatchVectorElement(p),
+
 
 
   // --[ Entry points ]

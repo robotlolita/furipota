@@ -1,4 +1,4 @@
-f """hello""" |> g _
+f """hello""" |> g
 ---
 result: OK
 rules: [Pipe, expression]
@@ -9,7 +9,4 @@ ast:
     callee: !Variable { id: !Identifier f }
     input: !Text "hello"
     options: !Record []
-  transformation: 
-    !Partial
-    callee: !Variable { id: !Identifier g }
-    options: !Record []
+  transformation: !Variable { id: !Identifier g }

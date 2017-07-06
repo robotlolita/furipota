@@ -13,7 +13,7 @@ const Stream = require('../data/stream');
 const { compact } = require('../utils');
 
 const { Environment } = require('./environment');
-const { Primitive, Partial, Lambda, NativeThunk, Thunk, Tagged, Module } = require('./intrinsics');
+const { Primitive, Lambda, NativeThunk, Thunk, Tagged, Module, Variant } = require('./intrinsics');
 const { assertParameters, assert, assertType } = require('./assertion');
 const { typeMatches, getType } = require('./types');
 
@@ -43,6 +43,55 @@ function typeMatch(ctx, value, patterns) {
 }
 
 
+// --[ Basic types ]---------------------------------------------------
+Tagged.prototype.$show = function(ctx) {
+  if (this.tag.$show) {
+    return this.tag.$show(ctx, this);
+  } else {
+    return `^${this.tag.tag}(${this.values.map(x => show(ctx, x)).join(', ')})`;
+  }
+};
+
+const TPath = new Variant('Path', [
+  native('isPath', [['Any'], {}], '', 
+  x => {
+    return Object(x) === x
+    &&     typeof x.$path === 'string'
+    &&     typeof x.base === 'string'
+    &&     typeof x.filename === 'string'
+    &&     typeof x.extension === 'string'
+  })
+]);
+TPath.$show = function(ctx, value) {
+  return `^${this.tag}(${pathToText(value)})`;
+};
+
+const isAny = native('isAny', [['Any'], {}], '', () => true);
+const isString = native('isString', [['Any'], {}], '', (x) => typeof x === 'string');
+
+const TOk = new Variant('Ok', [isAny]);
+const TError = new Variant('Error', [isAny]);
+
+const TUnit = new Variant('Unit', []);
+
+const TShellError = new Variant('Shell-Error', [
+  native('isError', [['Any'], {}], '',
+    x => Object(x) === x
+    &&   typeof x.stack === 'string'
+    &&   typeof x.message === 'string'
+    &&   typeof x.name === 'string'
+  )
+]);
+const TShellExitCode = new Variant('Shell-Exit-Code', [
+  native('isNumber', [['Any'], {}], '',
+    x => typeof x === 'number'
+  )
+]);
+const TShellOutput = new Variant('Shell-Output', [isString]);
+const TShellErrorOutput = new Variant('Shell-Error-Output', [isString]);
+
+
+
 // --[ Basic primitives ]----------------------------------------------
 function native(name, spec, doc, fn) {
   const [params, option, names = []] = spec;
@@ -58,11 +107,6 @@ function nativeThunk(name, documentation, value) {
 }
 
 
-function tagged(tag, value) {
-  return new Tagged(tag, value);
-}
-
-
 function nativeModule(name, record) {
   const module = new Module(name, new Environment(null));
   module.environment.extend(record);
@@ -71,37 +115,57 @@ function nativeModule(name, record) {
   return module;
 }
 
+
+function variant(name, predicates) {
+  return new Variant(name, predicates);
+}
+
+
+function tagged(variant, values) {
+  if (!(variant instanceof Variant)) {
+    throw new Error(`${variant} should be an instance of Variant.`);
+  }
+  if (values.length !== variant.predicates.length) {
+    throw new Error(`${variant} accepts exactly ${variant.predicates.length} arguments, ${values.length} given.`);
+  }
+
+  return new Tagged(variant, values);
+}
+
+
 function show(ctx, x) {
   return typeMatch(ctx, x, {
     'Boolean': (x) => String(x),
     'Number':  (x) => String(x),
     'Text':    (x) => x,
     'Vector':  (x) => `[${x.map((v) => show(ctx, v)).join(', ')}]`,
-    '^Path':   (x) => pathToText(x),
-    '^Shell-stderr':    (x) => x.value,
-    '^Shell-error':     (x) => x.value.stack,
-    '^Shell-exit-code': (x) => `exit code: ${x.value}`,
-    'default': (x) => getType(x)
+    'default': (x) => {
+      if (x instanceof Tagged) {
+        return x.$show(ctx);
+      } else {
+        return getType(x);
+      }
+    }
   });
 }
 
 
 // --[ Path-related primitives ]---------------------------------------
 function pathToText(x) {
-  assertType('^Path', x);
-  return x.value._path;
+  assertType(TPath, x);
+  return x.values[0].$path;
 }
 
 function textToPath(x) {
   assertType('Text', x);
   
   const data = path.parse(x);
-  return tagged('Path', {
+  return tagged(TPath, [{
     base: data.base,
     filename: data.name,
     extension: data.ext,
-    _path: x
-  });
+    $path: x
+  }]);
 }
 
 
@@ -114,7 +178,7 @@ function stream(producer) {
 // --[ OS-related primitives ]-----------------------------------------
 function shell(command, args, options) {
   const normalisedArgs = args.map(x => {
-    if (typeMatches('^Path', x)) {
+    if (typeMatches(TPath, x)) {
       return pathToText(x);
     } else {
       return x;
@@ -132,7 +196,11 @@ function shell(command, args, options) {
 
     const die = async (error) => {
       child.kill();
-      await producer.pushError(tagged('Shell-error', error));
+      await producer.pushError(new Taggged(TShellError, [{
+        stack: error.stack,
+        name: error.name,
+        message: error.message
+      }]));
       await producer.close();
     }
 
@@ -149,22 +217,26 @@ function shell(command, args, options) {
     };
 
     child.stdout.on('data', async (chunk) => {
-      wrap(() => producer.pushValue(chunk.toString(encoding)));
+      wrap(() => producer.pushValue(tagged(TShellOutput, [chunk.toString(encoding)])));
     });
 
     child.stderr.on('data',  async (chunk) => {
-      wrap(() => producer.pushError(tagged('Shell-stderr', chunk.toString(encoding))));
+      wrap(() => producer.pushError(tagged(TShellErrorOutput, [chunk.toString(encoding)])));
     });
 
     child.on('close', async (code) => {
       if (code !== 0) {
-        await producer.pushError(tagged('Shell-exit-code', code));
+        await producer.pushError(tagged(TShellExitCode, [code]));
       }
       await producer.close();
     });
 
     child.on('error', async (error) => {
-      await producer.pushError(tagged('Shell-error', { stack: error.stack, name: error.name, message: error.message }));
+      await producer.pushError(tagged(TShellError, { 
+        stack: error.stack, 
+        name: error.name, 
+        message: error.message 
+      }));
       await producer.close();
     });
   });
@@ -172,22 +244,24 @@ function shell(command, args, options) {
 
 // -- other structures
 function ok(value) {
-  return tagged('OK', value);
+  return tagged(TOk, [value]);
 }
 
 function error(value) {
-  return tagged('Error', value);
+  return tagged(TError, [value]);
 }
 
-const unit = tagged('Unit', {});
+const unit = tagged(TUnit, []);
 
 
 module.exports = {
   typeMatches, assert, assertType, show,
-  native, tagged, nativeModule, nativeThunk,
+  native, nativeModule, nativeThunk, tagged, variant,
   pathToText, textToPath,
   stream,
   shell,
   Stream,
-  ok, error, unit
+  ok, error, unit,
+  TPath, TOk, TError, TUnit, TShellError, TShellExitCode, TShellOutput, TShellErrorOutput,
+  isAny, isString
 };

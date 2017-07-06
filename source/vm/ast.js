@@ -75,8 +75,45 @@ const AST = union('furipota:ast', {
     return { value, options, expression };
   },
 
-  Tagged(tag, value) {
-    return { tag, value };
+  Tagged(tag, predicates) {
+    return { tag, predicates };
+  },
+
+  // --[ Pattern matching ]---------------------------------------------
+  Match(expression, cases) {
+    return { expression, cases };
+  },
+
+  MatchCase(pattern, expression) {
+    return { pattern, expression };
+  },
+
+  MatchBind(identifier) {
+    return { identifier };
+  },
+
+  MatchEquals(expression) {
+    return { expression };
+  },
+
+  MatchTagged(tag, patterns) {
+    return { tag, patterns };
+  },
+
+  MatchVector(items) {
+    return { items };
+  },
+
+  MatchVectorSpread(pattern) {
+    return { pattern };
+  },
+
+  MatchVectorElement(pattern) {
+    return { pattern };
+  },
+
+  MatchAny() {
+    return { };
   },
 
   // --[ Declarations ]-------------------------------------------------

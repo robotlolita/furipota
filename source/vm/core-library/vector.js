@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------
 
 module.exports = (furipota) => {
-  const { nativeModule, native, tagged, ok, error } = furipota.primitives;
+  const { nativeModule, native, ok, error } = furipota.primitives;
 
   const at = (ctx, index, vector) => {
     ctx.assert(index >= 1, 'Indexes should be 1-based and positive');
