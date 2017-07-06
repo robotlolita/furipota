@@ -9,6 +9,7 @@
     "furipota-run": "./bin/furipota-run"
   },
   "scripts": {
+    "test-travis": "node ./.snapshot/cli.js run build && ./bin/furipota run test",
     "test": "./bin/furipota run test",
     "postinstall": "node ./.snapshot/cli.js run build"
   },
