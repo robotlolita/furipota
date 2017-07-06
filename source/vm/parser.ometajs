@@ -18,7 +18,7 @@ var reserved = [
   'and', 'or', 'not',
   'default',
   'do', 'call', 'action', 'bind', 'return',
-  'match', 'case', 'with'
+  'match', 'case', 'with', 'any'
 ];
 
 function isValid(id) {
@@ -272,7 +272,7 @@ ometa FuripotaParser {
   CasePattern = kw('let') ws Identifier:i  -> ast.MatchBind(i)
               | '^' caseTagged:a           -> ast.MatchTagged(a[0], a[1])
               | CaseVector:v               -> ast.MatchVector(v)
-              | '_'                        -> ast.MatchAny()
+              | kw('any')                  -> ast.MatchAny()
               | simpleExpression:a         -> ast.MatchEquals(a),
 
   caseTagged = memberExpression:m (ws CasePattern)*:ps -> [m, ps]
@@ -283,7 +283,7 @@ ometa FuripotaParser {
                -> [e].concat(es).map(ast.MatchVectorElement).concat(le ? [le] : []),
 
   caseVectorLast = seq('...') kw('let') ws Identifier:i -> ast.MatchVectorSpread(ast.MatchBind(i))
-                 | seq('...') '_'                       -> ast.MatchVectorSpread(ast.MatchAny())
+                 | seq('...') kw('any')                 -> ast.MatchVectorSpread(ast.MatchAny())
                  | CasePattern:p                        -> ast.MatchVectorElement(p),
 
 

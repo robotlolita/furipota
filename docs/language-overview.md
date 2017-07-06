@@ -149,8 +149,8 @@ Furipota does not have classes or [tagged unions](https://en.wikipedia.org/wiki/
 You create tags with the `^Tag predicates…` syntax, where a predicate is any function that returns `true` if the value at that position is valid, or `false` otherwise:
 
 ```ruby
-define any x = true
-define Tuple2 = ^Tuple2 any any
+define is-any x = true
+define Tuple2 = ^Tuple2 is-any is-any
 ```
 
 You construct tagged values by using the `make` function from the core library:
@@ -166,7 +166,7 @@ And you extract values with the `match...with` syntax, and the `^Tag` pattern. N
 ```ruby
 match one-two with
   case ^Tuple2 (let first) (let second) then first + second
-  case ^((x -> x) Tuple2) _ _ then "same as above"
+  case ^((x -> x) Tuple2) any any then "same as above"
   default "nothing matched."
 ```
 
