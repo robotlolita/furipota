@@ -146,17 +146,28 @@ if 2 < 3 then "less than" else "greater than"
 
 Furipota does not have classes or [tagged unions](https://en.wikipedia.org/wiki/Tagged_union), instead it uses the simpler concept of [open variants](https://caml.inria.fr/pub/docs/u3-ocaml/ocaml051.html). In Furipota in particular, an open variant is just a *tagged* value: a value and its associated "type identifier".
 
-You put values into tags with the `^Tag value` syntax:
+You create tags with the `^Tag predicates…` syntax, where a predicate is any function that returns `true` if the value at that position is valid, or `false` otherwise:
 
 ```ruby
-define one = ^Int 1
+define any x = true
+define Tuple2 = ^Tuple2 any any
 ```
 
-And you extract values from tags with the `match` function:
+You construct tagged values by using the `make` function from the core library:
 
 ```ruby
-match one
-  -Int value: (value + 1)
+import core "core"
+
+define one-two = make Tuple2 [1, 2]
+```
+
+And you extract values with the `match...with` syntax, and the `^Tag` pattern. Note that the `Tag` here is an expression that returns a tag, not an arbitrary identifier:
+
+```ruby
+match one-two with
+  case ^Tuple2 (let first) (let second) then first + second
+  case ^((x -> x) Tuple2) _ _ then "same as above"
+  default "nothing matched."
 ```
 
 ## Modules and definitions
