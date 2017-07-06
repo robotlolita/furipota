@@ -1,4 +1,4 @@
-# FuriPota (フリポタ)
+# FuriPota (フリポタ)  [![Build Status](https://travis-ci.org/origamitower/furipota.svg?branch=master)](https://travis-ci.org/origamitower/furipota)
 
 <img src="https://raw.githubusercontent.com/origamitower/furipota/master/.github/furipota.png" alt="furipota logo" align="left">
 
