@@ -232,11 +232,11 @@ function shell(command, args, options) {
     });
 
     child.on('error', async (error) => {
-      await producer.pushError(tagged(TShellError, { 
+      await producer.pushError(tagged(TShellError, [{ 
         stack: error.stack, 
         name: error.name, 
         message: error.message 
-      }));
+      }]));
       await producer.close();
     });
   });
