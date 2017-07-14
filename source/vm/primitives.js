@@ -190,7 +190,8 @@ function shell(command, args, options) {
       cwd: options['working-directory'] ? pathToText(options['working-directory']) : null,
       env: Object.assign({}, process.env, options.environment),
       uid: options['user-id'],
-      gid: options['group-id']
+      gid: options['group-id'],
+      shell: true
     }));
     const encoding = options.encoding != null ? options.encoding : 'utf8';
 
