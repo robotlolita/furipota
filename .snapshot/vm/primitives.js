@@ -8,7 +8,7 @@
 //----------------------------------------------------------------------
 
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn } = require('cross-spawn');
 const Stream = require('../data/stream');
 const { compact } = require('../utils');
 
@@ -191,7 +191,7 @@ function shell(command, args, options) {
       env: Object.assign({}, process.env, options.environment),
       uid: options['user-id'],
       gid: options['group-id'],
-      shell: true
+      shell: false
     }));
     const encoding = options.encoding != null ? options.encoding : 'utf8';
 
