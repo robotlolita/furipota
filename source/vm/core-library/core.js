@@ -125,7 +125,16 @@ module.exports = (furipota) => {
     native('assert', [['Boolean'], { 'message?': 'Text' }],
       'Simple boolean assertion',
       (ctx, test, options) => {
-        ctx.assert(test, options.message || ctx.trace.formatTopEntry());
+        ctx.assert(test, options.message || ctx.trace.formatTopEntry(1));
+        return unit;
+      }
+    ),
+
+    'assert-type':
+    native('assert-type', [[['Text', 'Variant'], 'Any'], { 'message?': 'Text' }],
+      'Simple boolean assertion',
+      (ctx, type, value, options) => {
+        ctx.assertType(type, value, options.message || ctx.trace.formatTopEntry(1));
         return unit;
       }
     )

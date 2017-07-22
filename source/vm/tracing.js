@@ -68,8 +68,8 @@ class Trace {
     return this.trace.map(entry => this._formatEntry(entry));
   }
 
-  formatTopEntry() {
-    const entry = this.trace[0];
+  formatTopEntry(offset = 0) {
+    const entry = this.trace[offset];
 
     if (!entry) {
       throw new Error(`Trying to format the top of an empty trace.`);
