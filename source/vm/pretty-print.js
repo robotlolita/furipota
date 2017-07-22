@@ -104,11 +104,11 @@ const prettyPrint = (node, depth = 0) => {
     },
 
     MatchBind: ({ identifier }) => {
-      return `let ${prettyPrint(identifier, depth)}`;
+      return prettyPrint(identifier, depth);
     },
 
-    MatchEquals: ({ expression }) => {
-      return p(expression, depth);
+    MatchEquals: ({ identifier, expression }) => {
+      return `${prettyPrint(identifier, depth)} if ${p(expression, depth)}`;
     },
 
     MatchTagged: ({ tag, patterns }) => {

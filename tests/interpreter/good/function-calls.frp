@@ -17,8 +17,8 @@ define currying = [
 
 define g1 a @ options = 
   match Record.get options "b" with
-    case ^Ok let x  then a + x
-    case ^Error any then a
+    case ^Ok x       then a + x
+    case ^Error any  then a
 
 
 define options = [

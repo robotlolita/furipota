@@ -61,8 +61,8 @@ export define build =
 export define test =
   # Runs the tests for Furipota VM
   let show-error e = match e with
-    case ^Shell.Error let e     then e.stack
-    case ^Shell.Exit-Code let c then "The program exited with code {c}"
+    case ^Shell.Error e     then e.stack
+    case ^Shell.Exit-Code c then "The program exited with code {c}"
   in let furipota-run = project-root / "bin" / "furipota-run"
   in let run-shell s = Terminal.show-stream (Stream.map-errors show-error s)
   in sequential [

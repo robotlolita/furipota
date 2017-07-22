@@ -269,11 +269,14 @@ ometa FuripotaParser {
 
   CaseExpression = kw('case') ws CasePattern:p ws kw('then') ws expression:e -> ast.MatchCase(p, e),
 
-  CasePattern = kw('let') ws Identifier:i  -> ast.MatchBind(i)
-              | '^' caseTagged:a           -> ast.MatchTagged(a[0], a[1])
-              | CaseVector:v               -> ast.MatchVector(v)
-              | kw('any')                  -> ast.MatchAny()
-              | simpleExpression:a         -> ast.MatchEquals(a),
+  CasePattern = Identifier:i ws kw('if') ws Logical:a          -> ast.MatchEquals(i, a)
+              | kw('any') ws kw('if') ws Logical:a             -> ast.MatchEquals(ast.Identifier('_'), a)
+              | (Boolean | Number | Text):v                    -> ast.MatchEquals(ast.Identifier('_'), v)
+              | Identifier:i                                   -> ast.MatchBind(i)
+              | '^' caseTagged:a                               -> ast.MatchTagged(a[0], a[1])
+              | CaseVector:v                                   -> ast.MatchVector(v)
+              | kw('any')                                      -> ast.MatchAny()
+              | '(' ws CasePattern:a ws ')'                    -> a,
 
   caseTagged = memberExpression:m (ws CasePattern)*:ps -> [m, ps]
              | Identifier:i (ws CasePattern)*:ps       -> [ast.Variable(i), ps],

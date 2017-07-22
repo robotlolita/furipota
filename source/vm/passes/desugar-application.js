@@ -77,8 +77,8 @@ const desugarApplication = (node) =>
     MatchBind: ({ identifier }) =>
       ast.MatchBind(identifier),
 
-    MatchEquals: ({ expression }) =>
-      ast.MatchEquals(desugarApplication(expression)),
+    MatchEquals: ({ identifier, expression }) =>
+      ast.MatchEquals(identifier, desugarApplication(expression)),
 
     MatchTagged: ({ tag, patterns }) =>
       ast.MatchTagged(desugarApplication(tag), patterns.map(desugarApplication)),
