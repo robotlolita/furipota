@@ -174,7 +174,7 @@ const desugarApplication = (node) =>
       ast.DoBind(id, desugarApplication(expression)),
 
     DoLet: ({ id, expression }) =>
-      ast.DoLet(id, expression),
+      ast.DoLet(id, desugarApplication(expression)),
 
     DoIfThenElse: ({ condition, consequent, alternate }) =>
       ast.DoIfThenElse(
