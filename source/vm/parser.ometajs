@@ -143,7 +143,7 @@ ometa FuripotaParser {
            -> ast.Define(op, makeLambda([l, r, ast.Identifier('_')], e), d || ''),
 
   argNames = (ws Identifier)+:as (ws '@' ws Identifier)?:r -> as.concat([r || ast.Identifier('_')]),
-  doc = (space* comment)*:xs -> xs.join(''),
+  doc = (space* comment)*:xs -> xs.join('').trimRight(),
 
   Import = kw('import') ws importKind?:k ws Text:p ws kw('as') ws Identifier:i
            -> ast.ImportAliasing(p, i, k || 'furipota')

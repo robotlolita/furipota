@@ -14,9 +14,7 @@ ast:
 ***
 
 define doc =
-  # The doc
-  # goes here
-  # ya
+  # The doc goes here ya
   expr
 ---
 result: OK
@@ -25,4 +23,4 @@ ast:
   !Define
   id: !Identifier doc
   expression: !Variable { id: !Identifier expr }
-  documentation: " The doc\n goes here\n ya\n"
+  documentation: " The doc goes here ya"
