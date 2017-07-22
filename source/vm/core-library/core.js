@@ -119,6 +119,15 @@ module.exports = (furipota) => {
       (ctx, left, right, _options) => {
         return left !== right; // FIXME: structural equality
       }
+    ),
+
+    assert:
+    native('assert', [['Boolean'], { 'message?': 'Text' }],
+      'Simple boolean assertion',
+      (ctx, test, options) => {
+        ctx.assert(test, options.message || ctx.trace.formatTopEntry());
+        return unit;
+      }
     )
   });
 };
