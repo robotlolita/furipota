@@ -195,8 +195,8 @@ const desugarHoles = (bindings, node) =>
     MatchBind: ({ identifier }) =>
       ast.MatchBind(identifier),
 
-    MatchEquals: ({ expression }) =>
-      ast.MatchEquals(desugarHoles(bindings, expression)),
+    MatchEquals: ({ identifier, expression }) =>
+      ast.MatchEquals(identifier, desugarHoles(bindings, expression)),
 
     MatchTagged: ({ tag, patterns }) =>
       ast.MatchTagged(

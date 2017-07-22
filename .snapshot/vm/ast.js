@@ -92,8 +92,8 @@ const AST = union('furipota:ast', {
     return { identifier };
   },
 
-  MatchEquals(expression) {
-    return { expression };
+  MatchEquals(identifier, expression) {
+    return { identifier, expression };
   },
 
   MatchTagged(tag, patterns) {

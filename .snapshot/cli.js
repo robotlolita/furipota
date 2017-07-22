@@ -15,6 +15,7 @@ const { typeMatches } = require('./vm/types');
 const { show } = require('./vm/primitives');
 const { inspect } = require('util');
 const package = require('../package.json');
+const Maybe = require('folktale/maybe');
 
 
 const vm = new FuripotaVM();
@@ -23,9 +24,19 @@ const vm = new FuripotaVM();
 function showError(error) {
   if (error.isFuripotaError) {
     console.error(error.message);
-  } else {
+  } else if (error instanceof Error) {
     console.error(error.stack);
+  } else {
+    console.error(error);
   }
+}
+
+
+function die(expr, error) {
+  console.error(`\n\n${'-'.repeat(3)}`);
+  console.error(`There was a problem trying to execute ${JSON.stringify(expr)}.\n`);
+  showError(error);
+  process.exit(1);
 }
 
 
@@ -44,17 +55,18 @@ program.command('run <expression>')
 
       if (typeMatches('Stream', stream)) {
         stream.subscribe({
-          Value: ()  => {},
-          Error: (e) => { console.error('Error:', e) },
-          Close: ()  => {}
+          Value: ()  => { },
+          Error: (e) => { 
+            die(expr, e);
+          },
+          Close: ()  => { }
         });
         await stream.run();
       } else {
         console.log(inspect(show(context, stream), false, 5, true));
       }
     } catch (error) {
-      showError(error);
-      process.exit(1);
+      die(expr, error);
     }
   });
 

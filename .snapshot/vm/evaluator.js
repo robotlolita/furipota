@@ -144,9 +144,10 @@ function testPattern(pattern, value, ctx) {
       });
     },
 
-    MatchEquals: ({ expression }) => {
+    MatchEquals: ({ identifier, expression }) => {
       const otherValue = evaluate(expression, ctx);
-      return value === otherValue ? Maybe.Just({}) : Maybe.Nothing();
+      return value === otherValue ?  Maybe.Just({ [evaluate(identifier, ctx)]: value }) 
+      :      /* else */              Maybe.Nothing();
     },
     
     MatchTagged: ({ tag, patterns }) => {

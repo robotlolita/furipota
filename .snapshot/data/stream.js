@@ -279,7 +279,7 @@ class Stream {
 
   run() {
     if (this.running) {
-      return;
+      throw new Error('Attempted to run a stream that`s already running.');
     }
     this.running = true;
 
