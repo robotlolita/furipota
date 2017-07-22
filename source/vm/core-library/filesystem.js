@@ -106,6 +106,23 @@ module.exports = (furipota) => {
       }
     ),
 
+    'move':
+    native('move', [[TPath], { to: TPath, 'overwrite?': 'Boolean' }],
+      'Moves a file from one place to another',
+      (ctx, path, { to, overwrite }) => {
+        return stream(async (producer) => {
+          try {
+            await fsw.move(pathToText(path), pathToText(to), compact({ overwrite }));
+            await producer.pushValue({ from: path, to });
+            await producer.close();
+          } catch (error) {
+            await producer.pushError(error);
+            await producer.close();
+          }
+        })
+      }
+    )
+
     'list-directory':
     native('list-directory', [[TPath], {}],
       'lists the immediate contents of a directory',
