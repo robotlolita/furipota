@@ -103,7 +103,7 @@ module.exports = (furipota) => {
     ),
 
     chain:
-    native('chain', [['Invokable', 'Vector'], {}],
+    native('chain', [['Invokable', 'Stream'], {}],
       'Transforms values in a stream',
       (ctx, transformation, stream, _options) => {
         return stream.chain(x => transformation.invoke(ctx, x, {}));
@@ -111,7 +111,7 @@ module.exports = (furipota) => {
     ),
 
     recover:
-    native('recover', [['Invokable', 'Vector'], {}],
+    native('recover', [['Invokable', 'Stream'], {}],
       'Transforms errors in a stream',
       (ctx, handler, stream, _options) => {
         return stream.orElse(x => handler.invoke(ctx, x, {}));
