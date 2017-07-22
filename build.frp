@@ -33,7 +33,7 @@ define find-upwards from pattern =
 
 define build-to build-dir =
   let    target dest   = build-dir / Path.relative (path "source") @ -to: dest
-  in let show prefix x = Debug.log "{x.from} -> {x.to}" @ -prefix: prefix
+  in let show prefix x = Debug.log "{Path.to-text x.from} -> {Path.to-text x.to}" @ -prefix: prefix
   in let show-copy x   = show "COPY" x
   in let show-ometa x  = show "OMETA" x
   in do
@@ -61,9 +61,20 @@ export define build =
 export define test =
   # Runs the tests for Furipota VM
   let show-error e = match e with
-    case ^Shell.Error e     then e.stack
-    case ^Shell.Exit-Code c then "The program exited with code {e}"
-  in do
-    bind test <- find (path "tests/**/run.js")
-    action Debug.log (Path.to-text (Path.directory test)) @ -prefix: "TEST"
-    action Terminal.show (Stream.map-errors show-error $('node test))
+    case ^Shell.Error let e     then e.stack
+    case ^Shell.Exit-Code let c then "The program exited with code {c}"
+  in let furipota-run = project-root / "bin" / "furipota-run"
+  in let run-shell s = Terminal.show-stream (Stream.map-errors show-error s)
+  in sequential [
+    do
+      action Terminal.display-line "# Parser tests"
+      bind test <- find (path "tests/**/run.js")
+      action Debug.log (Path.to-text (Path.directory test)) @ -prefix: "TEST"
+      action run-shell $('node test),
+
+    do
+      action Terminal.display-line "# Interpreter tests"
+      bind test <- find (path "tests/interpreter/good/**/*.frp")
+      action Debug.log (Path.to-text test) @ -prefix: "TEST"
+      action run-shell $('node furipota-run test)
+  ]
