@@ -11,8 +11,8 @@ module.exports = (furipota) => {
   const { nativeModule, native, unit, Stream, TShellOutput, TShellErrorOutput } = furipota.primitives;
 
   return nativeModule('core:terminal', {
-    show:
-    native('show', [['Stream'], {}],
+    'show-stream':
+    native('show-stream', [['Stream'], {}],
       'outputs a stream to standard outputs',
       (ctx, stream, _options) => {
         stream.subscribe({
