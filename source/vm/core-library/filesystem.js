@@ -121,7 +121,7 @@ module.exports = (furipota) => {
           }
         })
       }
-    )
+    ),
 
     'list-directory':
     native('list-directory', [[TPath], {}],

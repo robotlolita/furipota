@@ -272,7 +272,7 @@ const desugarHoles = (bindings, node) =>
       ast.ShellSymbol(symbol),
 
     ShellSpread: ({ items }) =>
-      ast.ShellSpread(items.map(x => desugarHoles(bindings, x))),
+      ast.ShellSpread(desugarHoles(bindings, items)),
 
     ShellExpression: ({ expression }) =>
       ast.ShellExpression(desugarHoles(bindings, expression)),

@@ -153,7 +153,7 @@ const desugarApplication = (node) =>
       ast.ShellSymbol(symbol),
 
     ShellSpread: ({ items }) =>
-      ast.ShellSpread(items.map(desugarApplication)),
+      ast.ShellSpread(desugarApplication(items)),
 
     ShellExpression: ({ expression }) =>
       ast.ShellExpression(desugarApplication(expression)),

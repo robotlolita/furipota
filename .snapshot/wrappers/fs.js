@@ -37,5 +37,6 @@ module.exports = {
   makeDirectory: nodebackToPromise(mkdirp),
   glob: nodebackToPromise(glob),
   remove: nodebackToPromise(rimraf),
-  copy: nodebackToPromise(fse.copy)
+  copy: nodebackToPromise(fse.copy),
+  move: nodebackToPromise(fse.move)
 };
