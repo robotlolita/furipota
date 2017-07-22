@@ -55,6 +55,13 @@ module.exports = (furipota) => {
     native('count', [['Vector'], {}],
       'returns the number of elements in a vector',
       (ctx, vector, _options) => vector.length
+    ),
+
+    map:
+    native('map', [['Invokable', 'Vector'], {}],
+      'transforms the values in the vector',
+      (ctx, transformation, vector, _options) =>
+        vector.map(x => transformation.invoke(ctx, x, {}))
     )
   });
 };

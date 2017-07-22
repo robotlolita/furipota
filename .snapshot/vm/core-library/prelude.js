@@ -65,7 +65,7 @@ module.exports = (furipota) => {
     extract(FS, [
       'find', 'copy', 'make-directory', 'remove', 'Encoding',
       'list-directory', 'exists', 'read', 'write', 'symbolic-link',
-      'unlink'
+      'unlink', 'move'
     ]),
     extract(Number, [
       '+', '-', '*', 'divide', '>', '<', '<=', '>='
