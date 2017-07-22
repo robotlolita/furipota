@@ -222,7 +222,7 @@ function shell(command, args, options) {
     });
 
     child.stderr.on('data',  async (chunk) => {
-      wrap(() => producer.pushError(tagged(TShellErrorOutput, [chunk.toString(encoding)])));
+      wrap(() => producer.pushValue(tagged(TShellErrorOutput, [chunk.toString(encoding)])));
     });
 
     child.on('close', async (code) => {

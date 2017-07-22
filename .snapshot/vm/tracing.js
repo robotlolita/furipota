@@ -51,19 +51,40 @@ class Trace {
     return this._extend(TraceEntry.Procedure(module, name));
   }
 
+  _formatEntry(entry) {
+    return entry.matchWith({
+      Native: ({ module, name }) =>
+        `at native ${chalk.green(name)} in ${chalk.green(module.fileName)}`,
+
+      Procedure: ({ module, name, node }) =>
+        `at ${chalk.blue(name)} in ${chalk.green(module.fileName)}`,
+
+      Expression: ({ module, node }) =>
+        `in ${chalk.green(module.fileName)}\n  : ${chalk.gray(prettyPrint(node, 4).split(/\r|\n/)[0])}`
+    });
+  }
+
   format() {
-    return this.trace.map(entry => {
-      return entry.matchWith({
-        Native: ({ module, name }) =>
-          `at native ${chalk.green(name)} in ${chalk.green(module.fileName)}`,
+    return this.trace.map(entry => this._formatEntry(entry));
+  }
 
-        Procedure: ({ module, name, node }) =>
-          `at ${chalk.blue(name)} in ${chalk.green(module.fileName)}`,
+  formatTopEntry(offset = 0) {
+    const entry = this.trace[offset];
 
-        Expression: ({ module, node }) =>
-          `in ${chalk.green(module.fileName)}\n  : ${chalk.gray(prettyPrint(node, 4).split(/\r|\n/)[0])}`
-      });
-    })
+    if (!entry) {
+      throw new Error(`Trying to format the top of an empty trace.`);
+    }
+
+    return entry.matchWith({
+      Native: ({ module, name }) =>
+        `native ${chalk.green(name)} in ${chalk.green(module.fileName)}`,
+
+      Procedure: ({ module, name, node }) =>
+        `${chalk.blue(name)}: ${chalk.gray(prettyPrint(node, 4).split(/\r|\n/)[0])}`,
+
+      Expression: ({ module, node }) =>
+        `${chalk.gray(prettyPrint(node, 4).split(/\r|\n/)[0])}`
+    });
   }
 }
 
