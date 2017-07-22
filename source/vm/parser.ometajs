@@ -243,7 +243,7 @@ ometa FuripotaParser {
                      -> ast.Get(m, i)
                    | simpleExpression,
 
-  Shell = seq('$(') shellBaseArg:cmd (ws shellArg)*:args (ws '@' ws Record)?:r ws ')'
+  Shell = seq('$(') ws shellBaseArg:cmd (ws shellArg)*:args (ws '@' ws Record)?:r ws ')'
           -> ast.Shell(cmd, args, r || ast.Record([])),
 
   shellBaseArg = '\'' symbol:s       -> ast.ShellSymbol(s)
