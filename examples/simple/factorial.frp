@@ -1,0 +1,21 @@
+%furipota/1
+
+import core "prelude"
+
+define factorial n =
+  match n with
+    case 0   then 0
+    case 1   then 1
+    case any then n * factorial (n - 1)
+
+
+define range start end =
+  if start === end then
+    [start]
+  else
+    [start, ...range (start + 1) end]
+
+
+export define main = do
+  bind x <- Stream.from-vector (range 0 10)
+  action Terminal.display-line "{x}! = {factorial x}"

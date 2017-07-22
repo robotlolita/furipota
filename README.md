@@ -47,7 +47,10 @@ Finally, you can run the build pipeline passing a furipota expression to `run`:
 
     furipota run hello-world
 
-Check the `examples/` folder and the `docs/` folder for more stuff.
+Check the `examples/` folder and the `docs/` folder for more stuff. You can run the examples
+with `furipota-run`, like:
+
+    furipota-run examples/simple/factorial.frp
 
 
 ## Licence

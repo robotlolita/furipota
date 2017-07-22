@@ -1,0 +1,7 @@
+%furipota/1
+
+import core "prelude"
+
+
+export define main =
+  Terminal.display-line "Hello, world!"
