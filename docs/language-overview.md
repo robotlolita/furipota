@@ -165,7 +165,7 @@ And you extract values with the `match...with` syntax, and the `^Tag` pattern. N
 
 ```ruby
 match one-two with
-  case ^Tuple2 (let first) (let second) then first + second
+  case ^Tuple2 first second then first + second
   case ^((x -> x) Tuple2) any any then "same as above"
   default "nothing matched."
 ```
