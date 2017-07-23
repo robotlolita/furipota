@@ -1,5 +1,5 @@
 %furipota/1
-import core "prelude"
+import core "prelude" exposing Terminal
 
 define my-module =
   -message: "Hello"

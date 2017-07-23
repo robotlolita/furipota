@@ -38,6 +38,36 @@ function isValidIdentifier(x) {
 }
 
 
+function moduleKeys(record) {
+  return Object.keys(record).filter(isValidIdentifier);
+}
+
+
+function restrictBindings(record, modifier) {
+  const bindings = modifier.matchWith({
+    OpenAll: () => moduleKeys(record).map(x => [x, x]),
+    OpenHide: ({ bindings }) => {
+      const exclude = new Set(bindings);
+      return moduleKeys(record).filter(x => !exclude.has(x)).map(x => [x, x]);
+    },
+    OpenExpose: ({ bindings }) => {
+      return bindings.map(x => [x.name, x.alias]);
+    }
+  });
+
+  const result = {};
+  bindings.forEach(([sourceKey, targetKey]) => {
+    if (hasOwnProperty(record, sourceKey)) {
+      result[targetKey] = record[sourceKey];
+    } else {
+      throw ctx.error('INEXISTENT-PROPERTY', `No property ${sourceKey} in the module`);
+    }
+  });
+
+  return result;
+}
+
+
 // The do-language instruction interpreter
 function evaluateDo(instructions, originalContext) {
   if (instructions.length === 0) {
@@ -307,10 +337,10 @@ function evaluate(ast, originalContext) {
       return unit;
     },
 
-    Import: ({ path, kind }) => {
+    Import: ({ path, kind, modifier }) => {
       const pathValue = evaluate(path, ctx);
       const module = ctx.loadModule(pathValue, kind);
-      ctx.environment.extend(module.exportedBindings);
+      ctx.environment.extend(restrictBindings(module.exportedBindings, modifier));
       return unit;
     },
 
@@ -418,30 +448,8 @@ function evaluate(ast, originalContext) {
     },
 
     Open: ({ record, modifier, body }) => {
-      const moduleKeys = (x) => Object.keys(x).filter(isValidIdentifier);
-
       const moduleValue = evaluate(record, ctx);
-      const bindings = modifier.matchWith({
-        OpenAll: () => moduleKeys(moduleValue).map(x => [x, x]),
-        OpenHide: ({ bindings }) => {
-          const exclude = new Set(bindings);
-          return moduleKeys(moduleValue).filter(x => !exclude.has(x)).map(x => [x, x]);
-        },
-        OpenExpose: ({ bindings }) => {
-          return bindings.map(x => [x.name, x.alias]);
-        }
-      });
-
-      const extension = {};
-      bindings.forEach(([sk, tk]) => {
-        if (hasOwnProperty(moduleValue, sk)) {
-          extension[tk] = moduleValue[sk];
-        } else {
-          throw ctx.error('INEXISTENT-PROPERTY', `No property ${sk} in the module`);
-        }
-      });
-
-      return evaluate(body, ctx.extendEnvironment(extension));
+      return evaluate(body, ctx.extendEnvironment(restrictBindings(moduleValue, modifier)));
     },
 
     // --[ Shell expressions ]-----------------------------------------

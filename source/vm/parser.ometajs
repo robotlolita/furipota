@@ -148,8 +148,8 @@ ometa FuripotaParser {
 
   Import = kw('import') ws importKind?:k ws Text:p ws kw('as') ws Identifier:i
            -> ast.ImportAliasing(p, i, k || 'furipota')
-         | kw('import') ws importKind?:k ws Text:p
-           -> ast.Import(p, k || 'furipota'),
+         | kw('import') ws importKind?:k ws Text:p ws OpenModifier?:m
+           -> ast.Import(p, k || 'furipota', m || ast.OpenAll()),
 
   importKind = kw('core') | kw('plugin'),
 

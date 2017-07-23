@@ -219,8 +219,8 @@ const desugarHoles = (bindings, node) =>
     Define: ({ id, expression, documentation }) =>
       ast.Define(id, desugarHoles(bindings, expression), documentation),
 
-    Import: ({ path, kind }) =>
-      ast.Import(path, kind),
+    Import: ({ path, kind, modifier }) =>
+      ast.Import(path, kind, modifier),
 
     ImportAliasing: ({ path, alias, kind }) =>
       ast.ImportAliasing(path, alias, kind),

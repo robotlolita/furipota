@@ -135,8 +135,8 @@ const prettyPrint = (node, depth = 0) => {
       return 'define ' + prettyPrint(id, depth) + ' = \n' + ' '.repeat(depth + 2) + prettyPrint(expression, depth + 2);
     },
 
-    Import: ({ kind, path }) => {
-      return 'import ' + kind + ' ' + prettyPrint(path, depth);
+    Import: ({ kind, path, modifier }) => {
+      return 'import ' + kind + ' ' + prettyPrint(path, depth) + ' ' + prettyPrint(modifier, depth);
     },
 
     ImportAliasing: ({ kind, path, alias }) => {

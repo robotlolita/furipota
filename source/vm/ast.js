@@ -121,8 +121,8 @@ const AST = union('furipota:ast', {
     return { id, expression, documentation };
   },
 
-  Import(path, kind) {
-    return { path, kind };
+  Import(path, kind, modifier) {
+    return { path, kind, modifier };
   },
 
   ImportAliasing(path, alias, kind) {
@@ -182,9 +182,7 @@ const AST = union('furipota:ast', {
     return { bindings };
   },
 
-  OpenAll() {
-
-  },
+  OpenAll() { },
 
   OpenBinding(name, alias) {
     return { name, alias };
