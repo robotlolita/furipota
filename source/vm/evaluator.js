@@ -33,6 +33,10 @@ function flatten(xss) {
 }
 
 
+function isValidIdentifier(x) {
+  return /^([a-zA-Z0-9\-_]+|===|=\/=|>|>=|<|<=|\+|-|\*|\/)$/.test(x);
+}
+
 
 // The do-language instruction interpreter
 function evaluateDo(instructions, originalContext) {
@@ -411,6 +415,33 @@ function evaluate(ast, originalContext) {
       } else {
         throw ctx.error('INEXISTENT-PROPERTY', `No property ${propertyName} in the record.`);
       }
+    },
+
+    Open: ({ record, modifier, body }) => {
+      const moduleKeys = (x) => Object.keys(x).filter(isValidIdentifier);
+
+      const moduleValue = evaluate(record, ctx);
+      const bindings = modifier.matchWith({
+        OpenAll: () => moduleKeys(moduleValue).map(x => [x, x]),
+        OpenHide: ({ bindings }) => {
+          const exclude = new Set(bindings);
+          return moduleKeys(moduleValue).filter(x => !exclude.has(x)).map(x => [x, x]);
+        },
+        OpenExpose: ({ bindings }) => {
+          return bindings.map(x => [x.name, x.alias]);
+        }
+      });
+
+      const extension = {};
+      bindings.forEach(([sk, tk]) => {
+        if (hasOwnProperty(moduleValue, sk)) {
+          extension[tk] = moduleValue[sk];
+        } else {
+          throw ctx.error('INEXISTENT-PROPERTY', `No property ${sk} in the module`);
+        }
+      });
+
+      return evaluate(body, ctx.extendEnvironment(extension));
     },
 
     // --[ Shell expressions ]-----------------------------------------

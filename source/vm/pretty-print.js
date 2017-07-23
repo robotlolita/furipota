@@ -184,6 +184,27 @@ const prettyPrint = (node, depth = 0) => {
       return prettyPrint(operator, depth) + ' ' + p(expression, depth);
     },
 
+    Open: ({ record, modifier, body }) => {
+      return `open ${prettyPrint(record, depth)} ${prettyPrint(modifier, depth)} in ${prettyPrint(body, depth)}`;
+    },
+
+    OpenExpose: ({ bindings }) => {
+      return 'exposing ' + bindings.map(x => prettyPrint(x, depth)).join(', ');
+    },
+
+    OpenHide: ({ bindings }) => {
+      return 'excluding ' + bindings.join(', ');
+    },
+
+    OpenAll: () => {
+      return '';
+    },
+
+    OpenBinding: ({ name, alias }) => {
+      return name === alias ?  name
+      :      /* else */        `${name} as ${alias}`;
+    },
+
     Shell: ({ command, args, options }) => {
       return `\$(${prettyPrint(command, depth)} ${args.map(x => prettyPrint(x, depth)).join(' ')} @ ${prettyPrint(options, depth)})`;
     },

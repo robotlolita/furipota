@@ -170,6 +170,26 @@ const AST = union('furipota:ast', {
     return { operator, expression };
   },
 
+  Open(record, modifier, body) {
+    return { record, modifier, body };
+  },
+
+  OpenExpose(bindings) {
+    return { bindings };
+  },
+
+  OpenHide(bindings) {
+    return { bindings };
+  },
+
+  OpenAll() {
+
+  },
+
+  OpenBinding(name, alias) {
+    return { name, alias };
+  },
+
 
   // --[ Shell sublanguage ]-------------------------------------------
   Shell(command, args, options) {

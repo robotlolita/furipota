@@ -146,6 +146,9 @@ const desugarApplication = (node) =>
     Prefix: ({ operator, expression }) =>
       ast.Invoke(operator, desugarApplication(expression), ast.Record([])),
 
+    Open: ({ record, modifier, body }) =>
+      ast.Open(desugarApplication(record), modifier, desugarApplication(body)),
+
     Shell: ({ command, args, options }) =>
       ast.Shell(desugarApplication(command), args.map(desugarApplication), desugarApplication(options)),
 

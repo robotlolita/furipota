@@ -12,6 +12,7 @@ const ast = require('./ast');
 var reserved = [
   'define',
   'import', 'core', 'plugin', 'export', 'as',
+  'open', 'exposing', 'excluding',
   'true', 'false',
   'let', 'in',
   'if', 'then', 'else',
@@ -164,6 +165,7 @@ ometa FuripotaParser {
              | Lambda
              | Let
              | IfThenElse
+             | Open
              | Match
              | Pipe
              | Do,
@@ -197,6 +199,23 @@ ometa FuripotaParser {
                  ws kw('then') ws expression:t
                  ws kw('else') ws expression:e
                -> ast.IfThenElse(c, t, e),
+
+  Open = kw('open') ws expression:e ws OpenModifier?:mod ws kw('in') ws expression:body
+         -> ast.Open(e, mod || ast.OpenAll(), body),
+
+  OpenModifier = OpenOnly:xs      -> ast.OpenExpose(xs)
+               | OpenExcluding:xs -> ast.OpenHide(xs),
+
+  OpenOnly = kw('exposing') ws openBindingList:xs -> xs,
+
+  OpenExcluding = kw('excluding') ws openExclusionList:xs -> xs,
+
+  openExclusionList = symbol:x (ws ',' ws symbol)*:xs -> [x].concat(xs),
+
+  openBindingList = openBinding:x (ws ',' ws openBinding)*:xs -> [x].concat(xs),
+
+  openBinding = symbol:x ws kw('as') ws symbol:y -> ast.OpenBinding(x, y)
+              | symbol:x                         -> ast.OpenBinding(x, x),
 
   Pipe = Pipe:a ws seq('|>') ws Logical:t
          -> ast.Pipe(a, t)

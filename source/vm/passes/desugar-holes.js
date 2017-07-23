@@ -261,6 +261,13 @@ const desugarHoles = (bindings, node) =>
       throw new SyntaxError(`Prefix node found while desugaring holes, after desugaring applications. This is probably an error in the Furipota compiler.`)
     },
 
+    Open: ({ record, modifier, body }) =>
+      ast.Open(
+        desugarHoles(bindings, record),
+        modifier,
+        desugarHoles(bindings, body)
+      ),
+
     Shell: ({ command, args, options }) =>
       ast.Shell(
         desugarHoles(bindings, command), 

@@ -4,7 +4,7 @@
   "patterns": [
     {
       "name": "keyword.control.furipota",
-      "match": "(?<![a-zA-Z0-9\\-\\.\\^])(define|import|core|plugin|export|as|let|in|if|then|else|and|or|not|default|do|call|action|bind|return|match|with|case|any)(?![a-zA-Z0-9\\-])"
+      "match": "(?<![a-zA-Z0-9\\-\\.\\^])(define|import|core|plugin|export|as|let|in|if|then|else|and|or|not|default|do|call|action|bind|return|match|with|case|any|open|exposing|excluding)(?![a-zA-Z0-9\\-])"
     },
     {
       "name": "constant.language.furipota",
