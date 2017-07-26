@@ -136,12 +136,14 @@ ometa FuripotaParser {
   // --[ Declarations ]
   declaration = Define | Import | Export,
 
-  Define = kw('define') ws Identifier:i ws '=' doc?:d ws expression:e
-           -> ast.Define(i, e, d || '')
-         | kw('define') ws Identifier:i ws argNames:as ws '=' doc?:d ws expression:e
-           -> ast.Define(i, makeLambda(as, e), d || '')
-         | kw('define') ws Identifier:l ws infix:op ws Identifier:r ws '=' doc?:d ws expression:e
-           -> ast.Define(op, makeLambda([l, r, ast.Identifier('_')], e), d || ''),
+  Define = kw('define') ws DefineDeclaration,
+  
+  DefineDeclaration = Identifier:i ws '=' doc?:d ws expression:e
+                      -> ast.Define(i, e, d || '')
+                    | Identifier:i ws argNames:as ws '=' doc?:d ws expression:e
+                      -> ast.Define(i, makeLambda(as, e), d || '')
+                    | Identifier:l ws infix:op ws Identifier:r ws '=' doc?:d ws expression:e
+                      -> ast.Define(op, makeLambda([l, r, ast.Identifier('_')], e), d || ''),
 
   argNames = (ws Identifier)+:as (ws '@' ws Identifier)?:r -> as.concat([r || ast.Identifier('_')]),
   doc = (space* comment)*:xs -> xs.join('').trimRight(),
@@ -154,6 +156,8 @@ ometa FuripotaParser {
   importKind = kw('core') | kw('plugin'),
 
   Export = kw('export') ws Define:d
+           -> ast.Seq([d, ast.Export(d.id)])
+         | kw('export') ws DefineDeclaration:d
            -> ast.Seq([d, ast.Export(d.id)])
          | kw('export') ws Identifier:i ws kw('as') ws Identifier:a
            -> ast.ExportAliasing(i, a)

@@ -9,7 +9,7 @@ define my-module =
 define no-modules =
   Terminal.display-line "{my-module.message}, {my-module.target}"
 
-export define main =
+export main =
   open my-module excluding heh
   in open Terminal exposing display-line as show
   in 

@@ -3,5 +3,5 @@
 import core "prelude"
 
 
-export define main =
+export main =
   Terminal.display-line "Hello, world!"

@@ -16,6 +16,6 @@ define range start end =
     [start, ...range (start + 1) end]
 
 
-export define main = do
+export main = do
   bind x <- Stream.from-vector (range 0 10)
   action Terminal.display-line "{x}! = {factorial x}"
