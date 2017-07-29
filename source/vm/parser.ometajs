@@ -34,6 +34,20 @@ function makeLambda(args, expr) {
   }, ast.Lambda(lastArg, recordArg, expr));
 }
 
+function decorate(decorators, definition) {
+  return decorators.reduceRight(
+    function(d, f) {
+      return ast.Define(
+        d.id,
+        ast.Invoke(f, d.expression, ast.Record([])),
+        d.documentation
+      )
+    },
+    definition
+  );
+}
+
+
 
 ometa FuripotaParser {
   // --[ Lexical structure ]
@@ -136,7 +150,10 @@ ometa FuripotaParser {
   // --[ Declarations ]
   declaration = Define | Import | Export,
 
-  Define = kw('define') ws DefineDeclaration,
+  Decorate = (ws '%' ws expression)+:ds -> ds,
+
+  Define = Decorate:ds ws kw('define') ws DefineDeclaration:e -> decorate(ds, e)
+         | kw('define') ws DefineDeclaration:e                -> e,
   
   DefineDeclaration = Identifier:i ws '=' doc?:d ws expression:e
                       -> ast.Define(i, e, d || '')
