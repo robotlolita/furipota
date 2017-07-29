@@ -70,6 +70,24 @@ program.command('run <expression>')
     }
   });
 
+program.command('desugar')
+  .option('-f, --file <file>', 'A file providing build definitions (default: build.frp)', 'build.frp')
+  .description('Prints out the desugared version of the program, for debugging')
+  .action(async (options) => {
+    const fullPath = path.resolve(process.cwd(), options.file);
+    const ast = vm.parseFile(fullPath);
+
+    console.log(`Source of ${options.file}`);
+    console.log('');
+    console.log(vm.prettyPrint(ast));
+
+    console.log('\n---\n\n');
+    console.log(`Desugared version of ${options.file}`);
+    console.log('');
+    console.log(vm.prettyPrint(vm.compile(ast)));
+    console.log('');
+  });
+
 program.command('list')
   .option('-f, --file <file>', 'A file providing build definitions (default: build.frp)', 'build.frp')
   .description(`Lists available commands.`)
