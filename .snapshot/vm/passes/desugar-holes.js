@@ -219,8 +219,8 @@ const desugarHoles = (bindings, node) =>
     Define: ({ id, expression, documentation }) =>
       ast.Define(id, desugarHoles(bindings, expression), documentation),
 
-    Import: ({ path, kind }) =>
-      ast.Import(path, kind),
+    Import: ({ path, kind, modifier }) =>
+      ast.Import(path, kind, modifier),
 
     ImportAliasing: ({ path, alias, kind }) =>
       ast.ImportAliasing(path, alias, kind),
@@ -260,6 +260,13 @@ const desugarHoles = (bindings, node) =>
     Prefix: ({ operator, expression }) => {
       throw new SyntaxError(`Prefix node found while desugaring holes, after desugaring applications. This is probably an error in the Furipota compiler.`)
     },
+
+    Open: ({ record, modifier, body }) =>
+      ast.Open(
+        desugarHoles(bindings, record),
+        modifier,
+        desugarHoles(bindings, body)
+      ),
 
     Shell: ({ command, args, options }) =>
       ast.Shell(

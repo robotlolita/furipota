@@ -33,6 +33,40 @@ function flatten(xss) {
 }
 
 
+function isValidIdentifier(x) {
+  return /^([a-zA-Z0-9\-_]+|===|=\/=|>|>=|<|<=|\+|-|\*|\/)$/.test(x);
+}
+
+
+function moduleKeys(record) {
+  return Object.keys(record).filter(isValidIdentifier);
+}
+
+
+function restrictBindings(record, modifier) {
+  const bindings = modifier.matchWith({
+    OpenAll: () => moduleKeys(record).map(x => [x, x]),
+    OpenHide: ({ bindings }) => {
+      const exclude = new Set(bindings);
+      return moduleKeys(record).filter(x => !exclude.has(x)).map(x => [x, x]);
+    },
+    OpenExpose: ({ bindings }) => {
+      return bindings.map(x => [x.name, x.alias]);
+    }
+  });
+
+  const result = {};
+  bindings.forEach(([sourceKey, targetKey]) => {
+    if (hasOwnProperty(record, sourceKey)) {
+      result[targetKey] = record[sourceKey];
+    } else {
+      throw ctx.error('INEXISTENT-PROPERTY', `No property ${sourceKey} in the module`);
+    }
+  });
+
+  return result;
+}
+
 
 // The do-language instruction interpreter
 function evaluateDo(instructions, originalContext) {
@@ -303,10 +337,10 @@ function evaluate(ast, originalContext) {
       return unit;
     },
 
-    Import: ({ path, kind }) => {
+    Import: ({ path, kind, modifier }) => {
       const pathValue = evaluate(path, ctx);
       const module = ctx.loadModule(pathValue, kind);
-      ctx.environment.extend(module.exportedBindings);
+      ctx.environment.extend(restrictBindings(module.exportedBindings, modifier));
       return unit;
     },
 
@@ -411,6 +445,11 @@ function evaluate(ast, originalContext) {
       } else {
         throw ctx.error('INEXISTENT-PROPERTY', `No property ${propertyName} in the record.`);
       }
+    },
+
+    Open: ({ record, modifier, body }) => {
+      const moduleValue = evaluate(record, ctx);
+      return evaluate(body, ctx.extendEnvironment(restrictBindings(moduleValue, modifier)));
     },
 
     // --[ Shell expressions ]-----------------------------------------

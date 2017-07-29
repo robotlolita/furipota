@@ -98,8 +98,8 @@ const desugarApplication = (node) =>
     Define: ({ id, expression, documentation }) =>
       ast.Define(id, desugarApplication(expression), documentation),
 
-    Import: ({ path, kind }) =>
-      ast.Import(path, kind),
+    Import: ({ path, kind, modifier }) =>
+      ast.Import(path, kind, modifier),
 
     ImportAliasing: ({ path, alias, kind }) =>
       ast.ImportAliasing(path, alias, kind),
@@ -145,6 +145,9 @@ const desugarApplication = (node) =>
 
     Prefix: ({ operator, expression }) =>
       ast.Invoke(operator, desugarApplication(expression), ast.Record([])),
+
+    Open: ({ record, modifier, body }) =>
+      ast.Open(desugarApplication(record), modifier, desugarApplication(body)),
 
     Shell: ({ command, args, options }) =>
       ast.Shell(desugarApplication(command), args.map(desugarApplication), desugarApplication(options)),
