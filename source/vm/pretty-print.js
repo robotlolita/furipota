@@ -151,6 +151,10 @@ const prettyPrint = (node, depth = 0) => {
       return 'export ' + prettyPrint(identifier, depth) + ' as ' + prettyPrint(alias, depth);
     },
 
+    ExprSequence: ({ expression, rest }) => {
+      return `${prettyPrint(expression, depth)};\n${' '.repeat(depth)}${prettyPrint(rest, depth)}`;
+    },
+
     Invoke: ({ callee, input, options }) => {
       return p(callee, depth) + ' ' + p(input, depth) + ' ' + prettyPrint(options, depth); 
     },

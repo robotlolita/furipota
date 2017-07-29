@@ -138,6 +138,10 @@ const AST = union('furipota:ast', {
   },
 
   // --[ Expressions ]--------------------------------------------------
+  ExprSequence(expression, rest) {
+    return { expression, rest };
+  },
+
   Invoke(callee, input, options) {
     return { callee, input, options };
   },

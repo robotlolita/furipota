@@ -231,6 +231,12 @@ const desugarHoles = (bindings, node) =>
     ExportAliasing: ({ identifier, alias }) =>
       ast.ExportAliasing(identifier, alias),
 
+    ExprSequence: ({ expression, rest }) =>
+      ast.ExprSequence(
+        desugarHoles(bindings, expression),
+        desugarHoles(bindings, rest)
+      ),
+
     Invoke: ({ callee, input, options }) =>
       maybeSimplifyInvokeHoles(bindings, ast.Invoke(callee, input, options)),
 

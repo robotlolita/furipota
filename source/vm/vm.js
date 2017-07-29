@@ -21,6 +21,7 @@ const Parser = require('./parser').FuripotaParser;
 const CoreModules = require('./core-library');
 const Plugins = require('./plugins');
 const compile = require('./passes');
+const pprint = require('./pretty-print');
 
 
 function readAsText(path) {
@@ -43,6 +44,18 @@ class FuripotaVM {
 
   parseExpression(source) {
     return Parser.matchAll(source, 'expression');
+  }
+
+  parseFile(file) {
+    return this.parse(readAsText(file));
+  }
+
+  compile(ast) {
+    return compile(ast);
+  }
+
+  prettyPrint(ast) {
+    return pprint(ast);
   }
 
   context(module, environment) {
@@ -86,7 +99,7 @@ class FuripotaVM {
             path: primitives.textToPath(file)
           });
 
-          const ast = this.parse(readAsText(file));
+          const ast = this.parseFile(file);
           this.evaluate(ast, ctx);
 
           this.moduleCache.set(file, module);

@@ -110,6 +110,9 @@ const desugarApplication = (node) =>
     ExportAliasing: ({ identifier, alias }) =>
       ast.ExportAliasing(identifier, alias),
 
+    ExprSequence: ({ expression, rest }) =>
+      ast.ExprSequence(desugarApplication(expression), desugarApplication(rest)),
+
     Invoke: ({ callee, input, options }) =>
       ast.Invoke(desugarApplication(callee), desugarApplication(input), desugarApplication(options)),
 

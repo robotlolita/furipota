@@ -182,7 +182,9 @@ ometa FuripotaParser {
            -> ast.Export(i),
 
   // --[ Expressions ]
-  expression = Record
+  expression = Sequence,
+
+  expression1 = Record
              | Lambda
              | Let
              | IfThenElse
@@ -190,6 +192,9 @@ ometa FuripotaParser {
              | Match
              | Pipe
              | Do,
+
+  Sequence = expression1:e ws ";" ws Sequence:r -> ast.ExprSequence(e, r)
+           | expression1,
 
   doExpression = Lambda | Record | Pipe,
 

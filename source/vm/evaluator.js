@@ -375,6 +375,11 @@ function evaluate(ast, originalContext) {
 
 
     // --[ Expressions ]-----------------------------------------------
+    ExprSequence: ({ expression, rest }) => {
+      evaluate(expression, ctx);
+      return evaluate(rest, ctx);
+    },
+
     Invoke: ({ callee, input, options }) => {
       const fn = evaluate(callee, ctx);
       const inputValue = evaluate(input, ctx);
