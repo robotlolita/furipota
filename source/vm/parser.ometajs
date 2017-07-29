@@ -16,7 +16,6 @@ var reserved = [
   'true', 'false',
   'let', 'in',
   'if', 'then', 'else',
-  'and', 'or', 'not',
   'default',
   'do', 'call', 'action', 'bind', 'return',
   'match', 'case', 'with', 'any'
@@ -47,13 +46,28 @@ function decorate(decorators, definition) {
   );
 }
 
+function withDoc(doc, d, p) {
+  if (ast.Define.hasInstance(d)) {
+    return ast.Define(d.id, d.expression, doc);
+  } else if (ast.Seq.hasInstance(d)) {
+    var def = withDoc(doc, d.items[0], p);
+    var rest = d.items.slice(1);
+    return ast.Seq([def].concat(rest));
+  } else {
+    p._getError(function(err) {
+      throw new SyntaxError("Documentation can only be attached to definitions.\n\n" + err.message);
+    });
+  }
+}
+
 
 
 ometa FuripotaParser {
   // --[ Lexical structure ]
   space   = /\s/,
   ignored = space | comment,
-  comment = fromTo('#', '\n'):a -> a.slice(1),
+  comment = ~seq('#:') fromTo('#', '\n'):a -> a.slice(1),
+  docCom  = fromTo('#: ', '\n'):a -> a.slice(3),
   ws      = ignored*,
   sws     = ignored+,
   kw :xs  = seq(xs) ~(letter | digit | '-' | ':'),
@@ -91,7 +105,7 @@ ometa FuripotaParser {
 
   symbol = <(letter | digit | '-' | '_' | infix)+>,
 
-  infix = (seq('===') | seq('=/=') | '>' | seq('>=') | seq('<') | seq('<=') | '+' | '-' | '*' | '/'):a
+  infix = (seq('===') | seq('=/=') | '>' | seq('>=') | seq('<') | seq('<=') | '+' | '-' | '*' | '/' | kw('or') | kw('and')):a
           -> ast.Identifier(a),
 
   Hole = '_' -> ast.Hole(),
@@ -148,34 +162,36 @@ ometa FuripotaParser {
 
 
   // --[ Declarations ]
-  declaration = Define | Import | Export,
+  declaration = Define | Import | Export | Documented,
 
   Decorate = (ws '%' ws expression)+:ds -> ds,
 
   Define = Decorate:ds ws kw('define') ws DefineDeclaration:e -> decorate(ds, e)
          | kw('define') ws DefineDeclaration:e                -> e,
   
-  DefineDeclaration = Identifier:i ws '=' doc?:d ws expression:e
-                      -> ast.Define(i, e, d || '')
-                    | Identifier:i ws argNames:as ws '=' doc?:d ws expression:e
-                      -> ast.Define(i, makeLambda(as, e), d || '')
-                    | Identifier:l ws infix:op ws Identifier:r ws '=' doc?:d ws expression:e
-                      -> ast.Define(op, makeLambda([l, r, ast.Identifier('_')], e), d || ''),
+  DefineDeclaration = Identifier:i ws '=' ws expression:e
+                      -> ast.Define(i, e, '')
+                    | Identifier:l ws infix:op ws Identifier:r ws '=' ws expression:e
+                      -> ast.Define(op, makeLambda([l, r, ast.Identifier('_')], e), '')
+                    | Identifier:i ws argNames:as ws '=' ws expression:e
+                      -> ast.Define(i, makeLambda(as, e), ''),
 
   argNames = (ws Identifier)+:as (ws '@' ws Identifier)?:r -> as.concat([r || ast.Identifier('_')]),
-  doc = (space* comment)*:xs -> xs.join('').trimRight(),
+  
+  docs = docCom+:xs -> xs.join('').trimRight(),
+  Documented = docs:x space* (Define | Export):e -> withDoc(x, e, this),
 
-  Import = kw('import') ws importKind?:k ws Text:p ws kw('as') ws Identifier:i
+  Import = ws kw('import') ws importKind?:k ws Text:p ws kw('as') ws Identifier:i
            -> ast.ImportAliasing(p, i, k || 'furipota')
-         | kw('import') ws importKind?:k ws Text:p ws OpenModifier?:m
+         | ws kw('import') ws importKind?:k ws Text:p ws OpenModifier?:m
            -> ast.Import(p, k || 'furipota', m || ast.OpenAll()),
 
   importKind = kw('core') | kw('plugin'),
 
-  Export = kw('export') ws Define:d
-           -> ast.Seq([d, ast.Export(d.id)])
-         | kw('export') ws DefineDeclaration:d
-           -> ast.Seq([d, ast.Export(d.id)])
+  Export = Decorate?:ds ws kw('export') ws Define:d
+           -> ast.Seq([ds ? decorate(ds, d) : d, ast.Export(d.id)])
+         | Decorate?:ds ws kw('export') ws DefineDeclaration:d
+           -> ast.Seq([ds ? decorate(ds, d) : d, ast.Export(d.id)])
          | kw('export') ws Identifier:i ws kw('as') ws Identifier:a
            -> ast.ExportAliasing(i, a)
          | kw('export') ws Identifier:i
@@ -253,8 +269,6 @@ ometa FuripotaParser {
 
   Infix = Infix:l ws '`' qualifiedIdentifier:i ws Unary:r
           -> ast.Infix(i, l, r)
-        | Infix:l ws '`' Identifier:i ws Unary:r
-          -> ast.Infix(ast.Variable(i), l, r)
         | Postfix,
 
   Postfix = Postfix:e ws '|' ws memberExpression:i (ws '@' ws Record)?:r
@@ -262,7 +276,9 @@ ometa FuripotaParser {
           | Relational,
 
   qualifiedIdentifier = qualifiedIdentifier:a ws '.' ws symbol:i
-                        -> ast.Get(a, ast.Identifier(i)),
+                        -> ast.Get(a, ast.Identifier(i))
+                      | Identifier:i 
+                        -> ast.Variable(i),
 
   Relational = Relational:a ws (seq('===') | seq('=/=') | '>' | seq('>=') | '<' | seq('<=')):o ws Add:b
                -> ast.Infix(ast.Variable(ast.Identifier(o)), a, b)
@@ -284,8 +300,8 @@ ometa FuripotaParser {
            -> ast.Invoke(i, v, r || ast.Record([]))
          | memberExpression,
 
-  memberExpression = memberExpression:m ws '.' ws Identifier:i
-                     -> ast.Get(m, i)
+  memberExpression = memberExpression:m ws '.' ws symbol:i
+                     -> ast.Get(m, ast.Identifier(i))
                    | simpleExpression,
 
   Shell = seq('$(') ws shellBaseArg:cmd (ws shellArg)*:args (ws '@' ws Record)?:r ws ')'
@@ -337,6 +353,6 @@ ometa FuripotaParser {
 
 
   // --[ Entry points ]
-  Program = ws seq('%furipota/1') (ws declaration)*:xs ws eof
+  Program = ws seq('%furipota/1') ws docs?:d (ws declaration)*:xs ws eof
             -> ast.Program(xs)
 }

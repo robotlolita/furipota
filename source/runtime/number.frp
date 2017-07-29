@@ -1,0 +1,59 @@
+%furipota/1
+# ----------------------------------------------------------------------
+# 
+#  This source file is part of the furipota project.
+# 
+#  Licensed under MIT. See LICENCE for full licence information.
+#  See CONTRIBUTORS for the list of contributors to the project.
+# 
+# ----------------------------------------------------------------------
+
+#: This module defines the basis for manipulating numbers.
+#:
+#: @stability: experimental
+
+import core "contracts"
+
+
+# -- Common arithmetic operations -------------------------------------
+#: Floating point addition
+% fn2 Number Number `returns Number
+export x + y = P.number.add x y
+
+#: Floating point subtraction
+% fn2 Number Number `returns Number
+export x - y = P.number.sub x y
+
+#: Floating point multiplication
+% fn2 Number Number `returns Number
+export x * y = P.number.mul x y
+
+#: Floating point division
+% fn2 Number Number `returns Number
+export x / y = P.number.div x y
+
+
+# -- Relational operations --------------------------------------------
+#: Greater than
+% fn2 Number Number `returns Boolean
+export x > y = P.number.gt x y
+
+#: Greater than or equal to
+% fn2 Number Number `returns Boolean
+export x >= y = P.number.gte x y
+
+#: Less than
+% fn2 Number Number `returns Boolean
+export x < y = P.number.lt x y
+
+#: Less than or equal to
+% fn2 Number Number `returns Boolean
+export x <= y = P.number.lte x y
+
+#: Equality test
+% fn2 Number Number `returns Boolean
+export x === y = P.number.equals x y
+
+#: Inequality test
+% fn2 Number Number `returns Boolean
+export x =/= y = P.number.not_equals x y

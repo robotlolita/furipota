@@ -19,6 +19,7 @@ const primitives = require('./primitives');
 const AST = require('./ast');
 const Parser = require('./parser').FuripotaParser;
 const CoreModules = require('./core-library');
+const PrimModule = require('./primitives/all');
 const Plugins = require('./plugins');
 const compile = require('./passes');
 const pprint = require('./pretty-print');
@@ -36,6 +37,8 @@ class FuripotaVM {
     this.globals = new Environment(null);
     this.primitives = primitives;
     this.moduleCache = new Map();
+    this.runtimeCache = new Map();
+    this.runtimeDir = path.join(__dirname, '../runtime');
   }
 
   parse(source) {
@@ -70,13 +73,36 @@ class FuripotaVM {
     return evaluate(compile(ast), context);
   }
 
+  loadRuntimeModule(file) {
+    const fullPath = path.join(this.runtimeDir, file + '.frp');
+
+    if (this.runtimeCache.has(fullPath)) {
+      return this.runtimeCache.get(fullPath);
+    } else if (fs.existsSync(fullPath)) {
+      const module = new Module(fullPath, new Environment(null).extend({ P: PrimModule }));
+      const ctx = this.context(module, module.environment);
+
+      module.environment.define('self', {
+        path: primitives.textToPath(fullPath)
+      });
+
+      const ast = this.parseFile(fullPath);
+      this.evaluate(ast, ctx);
+
+      this.runtimeCache.set(fullPath, module);
+      return module;
+    } else {
+      throw new Error(`No core module ${file}`);
+    }
+  }
+
   loadModule(file, kind) {
     switch (kind) {
       case 'core': {
         if (this.coreModules.hasOwnProperty(file)) {
           return this.coreModules[file](this);
         } else {
-          throw new Error(`No core module ${file}`);
+          return this.loadRuntimeModule(file);
         }
       }
 

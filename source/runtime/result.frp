@@ -1,0 +1,23 @@
+%furipota/1
+# ----------------------------------------------------------------------
+# 
+#  This source file is part of the furipota project.
+# 
+#  Licensed under MIT. See LICENCE for full licence information.
+#  See CONTRIBUTORS for the list of contributors to the project.
+# 
+# ----------------------------------------------------------------------
+
+#: This module defines the basis for manipulating numbers.
+#:
+#: @stability: experimental
+
+import core "contracts"
+
+
+#: Constructs a result containing a successful value
+export ok value = P.value.make TOk value
+
+#: Constructs a result containing a failed value
+export error reason = P.value.make TError reason
+

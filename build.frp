@@ -4,6 +4,7 @@ import core "prelude"
 
 # -- CONSTANTS
 define js-sources    = find (path "source/**/*.js")
+define frp-sources   = find (path "source/**/*.frp")
 define ometa-sources = find (path "source/**/*.ometajs")
 define project-root  = Path.directory self.path
 
@@ -42,6 +43,9 @@ define build-to build-dir =
     action parallel [
       js-sources |> (x -> copy x @ -to: (target x))
                  |> show-copy,
+
+      frp-sources |> (x -> copy x @ -to: (target x))
+                  |> show-copy,
 
       do bind x <- ometa-sources
          action make-directory (Path.directory (target x)) | Debug.trace @ -prefix: "MKDIR"

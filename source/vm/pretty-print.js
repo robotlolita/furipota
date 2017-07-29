@@ -47,11 +47,11 @@ const prettyPrint = (node, depth = 0) => {
     },
 
     Interpolate: ({ items }) => {
-      return JSON.stringify(items.map(x => prettyPrint(x, depth)));
+      return `"${items.map(x => prettyPrint(x, depth)).join('')}"`;
     },
 
     Character: ({ character }) => {
-      return character;
+      return character === '"' ? '\\"' : character;
     },
 
     InterpolateExpression: ({ expression }) => {
@@ -131,8 +131,10 @@ const prettyPrint = (node, depth = 0) => {
       return '_';
     },
 
-    Define: ({ id, expression }) => {
-      return 'define ' + prettyPrint(id, depth) + ' = \n' + ' '.repeat(depth + 2) + prettyPrint(expression, depth + 2);
+    Define: ({ id, expression, documentation }) => {
+      return (documentation ? '\n#: ' + documentation + '\n' : '')
+           + 'define ' + prettyPrint(id, depth) + ' = \n'
+           + ' '.repeat(depth + 2) + prettyPrint(expression, depth + 2);
     },
 
     Import: ({ kind, path, modifier }) => {

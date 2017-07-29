@@ -1,0 +1,12 @@
+%furipota/1
+
+import core "prelude" exposing Terminal
+import core "contracts"
+import core "number"
+
+% fn2 Number Number
+define add a b = a + b
+
+
+export main =
+  Terminal.display-line "{add 1 2}"

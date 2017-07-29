@@ -333,14 +333,22 @@ function evaluate(ast, originalContext) {
     Define: ({ id, expression, documentation }) => {
       const name = evaluate(id, ctx);
       const thunk = new Thunk(ctx, name, expression, documentation);
-      ctx.environment.define(name, thunk);
+      try {
+        ctx.environment.define(name, thunk);
+      } catch (e) {
+        ctx.rethrow(e);
+      }
       return unit;
     },
 
     Import: ({ path, kind, modifier }) => {
       const pathValue = evaluate(path, ctx);
       const module = ctx.loadModule(pathValue, kind);
-      ctx.environment.extend(restrictBindings(module.exportedBindings, modifier));
+      try {
+        ctx.environment.extend(restrictBindings(module.exportedBindings, modifier));
+      } catch (e) {
+        ctx.rethrow(e);
+      }
       return unit;
     },
 
@@ -349,14 +357,19 @@ function evaluate(ast, originalContext) {
       const aliasValue = evaluate(alias, ctx);
       const module = ctx.loadModule(pathValue, kind);
 
-      ctx.environment.define(
-        aliasValue,
-        new NativeThunk(
+      try {
+        ctx.environment.define(
           aliasValue,
-          () => module.exportedBindings,
-          `A ${kind} module from ${pathValue}`
-        )
-      );
+          new NativeThunk(
+            aliasValue,
+            () => module.exportedBindings,
+            `A ${kind} module from ${pathValue}`
+          )
+        );
+      } catch (e) {
+        ctx.rethrow(e);
+      }
+
       return unit;
     },
 
@@ -417,9 +430,13 @@ function evaluate(ast, originalContext) {
 
     Let: ({ binding, value, expression }) => {
       const bindingValue = evaluate(binding, ctx);
-      const exprCtx = ctx.extendEnvironment({
-        [bindingValue]: new Thunk(ctx, bindingValue, value, '(let local binding)')
-      });
+      try {
+        const exprCtx = ctx.extendEnvironment({
+          [bindingValue]: new Thunk(ctx, bindingValue, value, '(let local binding)')
+        });
+      } catch (e) {
+        ctx.rethrow(e);
+      }
 
       return evaluate(expression, exprCtx);
     },
@@ -454,7 +471,11 @@ function evaluate(ast, originalContext) {
 
     Open: ({ record, modifier, body }) => {
       const moduleValue = evaluate(record, ctx);
-      return evaluate(body, ctx.extendEnvironment(restrictBindings(moduleValue, modifier)));
+      try {
+        return evaluate(body, ctx.extendEnvironment(restrictBindings(moduleValue, modifier)));
+      } catch (e) {
+        ctx.rethrow(e);
+      }
     },
 
     // --[ Shell expressions ]-----------------------------------------

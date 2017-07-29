@@ -1,0 +1,192 @@
+%furipota/1
+# ----------------------------------------------------------------------
+# 
+#  This source file is part of the furipota project.
+# 
+#  Licensed under MIT. See LICENCE for full licence information.
+#  See CONTRIBUTORS for the list of contributors to the project.
+# 
+# ----------------------------------------------------------------------
+
+#: This module defines the basis for Furipota's function contracts.
+#: 
+#: @stability: experimental
+
+
+# -- Simple type tests ------------------------------------------------
+#: Satisfied by any value.
+export Any x =
+  P.test.any x
+
+
+#: Satisfied if `x` is a number.
+export Number x =
+  P.test.number x
+
+
+#: Satisfied if `x` is a textual value.
+export Text x =
+  P.test.text x
+
+
+#: Satisfied if `x` is a boolean value
+export Boolean x =
+  P.test.boolean x
+
+
+#: Satisfieed if `x` is a Vector
+export Vector x =
+  P.test.vector x
+
+
+#: Satisfied if `x` is any invokable
+export Invokable x =
+  P.test.invokable x
+
+
+#: Satisfied if `x` is a Stream
+export Stream x =
+  P.test.stream x
+
+
+#: Satisfied if `x` is a Record
+export Record x =
+  P.test.record x
+
+
+#: Satisfied if `x` is any variant.
+export Any-Variant x =
+  P.test.any_variant x
+
+
+#: Satisfied if `x` is a variant with the provided tag.
+% fn2 Any-Variant Any
+export Variant tag x =
+  P.test.variant tag x
+
+
+#: Satisfied if `x` is an instance of a variant.
+% fn2 Any-Variant Any
+export Instance variant x =
+  P.test.instance variant x
+
+
+# -- Combinators for common contracts ---------------------------------
+#: Combines two contracts such that it passes if any of them does.
+% fn2 Invokable Invokable @ -returns: Invokable
+export f or g = 
+  x -> f x `P.boolean.or g x
+
+
+#: Combines two contracts such that it passes if both do.
+% fn2 Invokable Invokable @ -returns: Invokable
+export f and g = 
+  x -> f x `P.boolean.and g x
+
+
+#: Negates a contract.
+% fn1 Invokable @ -returns: Invokable
+export not f = x -> P.boolean.not (f x)
+
+
+# -- Applying contracts to functions ----------------------------------
+#: Applies a contract to a thunk/expression definition
+% fn2 Invokable Any
+export type t x = 
+  P.assert.value t x;
+  x
+
+
+define expect c i x f =
+  P.assert.blame_callee (c x) "Expected {c}, but got {P.debug.type x} at the {i} argument of {f}." 4
+
+#: Applies a contract to an unary function
+export fn1 c f @ opts = (x ->
+  expect c "1st" x f;
+  f x
+)
+
+#: Applies a contract to a binary function
+export fn2 c1 c2 f @ opts = (a b ->
+  expect c1 "1st" a f;
+  expect c2 "2nd" b f;
+  f a b
+)
+
+#: Applies a contract to a tertiary function
+export fn3 c1 c2 c3 f @ opts = (a b c ->
+  expect c1 "1st" a f;
+  expect c2 "2nd" b f;
+  expect c3 "3rd" c f;
+  f a b c
+)
+
+#: Applies a contract to a quarternary function
+export fn4 c1 c2 c3 c4 f @ opts = (a b c d ->
+  expect c1 "1st" a f;
+  expect c2 "2nd" b f;
+  expect c3 "3rd" c f;
+  expect c4 "4th" d f;
+  f a b c d
+)
+
+#: Applies a contract to a function of arity 5
+export fn5 c1 c2 c3 c4 c5 f @ opts = (a b c d e ->
+  expect c1 "1st" a f;
+  expect c2 "2nd" b f;
+  expect c3 "3rd" c f;
+  expect c4 "4th" d f;
+  expect c5 "5th" e f;
+  f a b c d e
+)
+
+#: Applies a contract to a function of arity 6
+export fn6 c1 c2 c3 c4 c5 c6 f @ opts = (a b c d e x ->
+  expect c1 "1st" a f;
+  expect c2 "2nd" b f;
+  expect c3 "3rd" c f;
+  expect c4 "4th" d f;
+  expect c5 "5th" e f;
+  expect c6 "6th" x f;
+  f a b c d e x
+)
+
+#: Applies a contract  to a function of arity 7
+export fn7 c1 c2 c3 c4 c5 c6 c7 f @ opts = (a b c d e f x w ->
+  expect c1 "1st" a f;
+  expect c2 "2nd" b f;
+  expect c3 "3rd" c f;
+  expect c4 "4th" d f;
+  expect c5 "5th" e f;
+  expect c6 "6th" x f;
+  expect c7 "7th" w f;
+  f a b c d e x w
+)
+
+
+#: Applies a contract  to a function of arity 8
+export fn8 c1 c2 c3 c4 c5 c6 c7 c8 f @ opts = (a b c d e x w y ->
+  expect c1 "1st" a f;
+  expect c2 "2nd" b f;
+  expect c3 "3rd" c f;
+  expect c4 "4th" d f;
+  expect c5 "5th" e f;
+  expect c6 "6th" x f;
+  expect c7 "7th" w f;
+  expect c8 "8th" y f;
+  f a b c d e x w y
+)
+
+#: Applies a contract  to a function of arity 9
+export fn9 c1 c2 c3 c4 c5 c6 c7 c8 c9 f @ opts = (a b c d e x w y z ->
+  expect c1 "1st" a f;
+  expect c2 "2nd" b f;
+  expect c3 "3rd" c f;
+  expect c4 "4th" d f;
+  expect c5 "5th" e f;
+  expect c6 "6th" x f;
+  expect c7 "7th" w f;
+  expect c8 "8th" y f;
+  expect c9 "9th" z f;
+  f a b c d e x w y z
+)
