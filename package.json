@@ -4,10 +4,8 @@
   "private": true,
   "description": "A discrete FRP DSL for describing build pipelines.",
   "main": "./furipota/index.js",
-  "bin": {
-  },
-  "scripts": {
-  },
+  "bin": {},
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/origamitower/furipota.git"
@@ -18,8 +16,9 @@
     "url": "https://github.com/origamitower/furipota/issues"
   },
   "homepage": "https://github.com/origamitower/furipota#readme",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
+    "tsdoc": "0.0.4",
+    "typescript": "^2.4.2"
   }
 }
