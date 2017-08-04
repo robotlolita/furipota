@@ -22,36 +22,6 @@ takes care of applying it to get the desired results.
 [There's a vague roadmap here](https://paper.dropbox.com/doc/oqVRBR64ieA3GUXGXByh8).
 
 
-## Getting started
-
-Install it with npm:
-
-    $ npm install -g origamitower/furipota
-
-Create a `build.frp` file:
-
-    %furipota/1
-
-    import core "prelude"
-
-    export define hello-world =
-      # Says "Hello, world"
-      Stream.from-vector ["Hello", ", ", "world"]
-        |> (x -> Stream.of (display x))
-
-You can check which bindings are exported with `list`:
-
-    furipota list
-
-Finally, you can run the build pipeline passing a furipota expression to `run`:
-
-    furipota run hello-world
-
-Check the `examples/` folder and the `docs/` folder for more stuff. You can run the examples
-with `furipota-run`, like:
-
-    furipota-run examples/simple/factorial.frp
-
 
 ## Licence
 

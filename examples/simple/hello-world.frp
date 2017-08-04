@@ -1,7 +1,0 @@
-%furipota/1
-
-import core "prelude"
-
-
-export main =
-  Terminal.display-line "Hello, world!"

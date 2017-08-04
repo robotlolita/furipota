@@ -1,8 +1,0 @@
-import """path"""
----
-result: OK
-rules: [Import, declaration]
-ast:
-  !Import
-  path: !Text "path"
-  kind: furipota

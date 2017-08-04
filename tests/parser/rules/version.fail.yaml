@@ -1,3 +1,0 @@
-define x = y
----
-result: FAIL
